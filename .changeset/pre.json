@@ -1,0 +1,10 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "hardhat-deploy-ethers": "0.3.0-beta.5"
+  },
+  "changesets": [
+    "fair-buckets-shout"
+  ]
+}

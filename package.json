@@ -1,11 +1,13 @@
 {
-  "name": "@nomiclabs/hardhat-ethers",
-  "version": "0.1.0-rc.0",
-  "description": "Hardhat plugin for ethers",
-  "homepage": "https://github.com/nomiclabs/hardhat/tree/master/packages/hardhat-ethers",
-  "repository": "github:nomiclabs/hardhat",
-  "author": "Nomic Labs LLC",
+  "name": "hardhat-deploy-ethers",
+  "version": "0.3.0-beta.6",
+  "description": "Hardhat plugin for ethers that plays well with hardhat-deploy",
+  "homepage": "https://github.com/wighawag/hardhat-deploy-ethers",
+  "repository": "github:wighawag/hardhat-deploy-ethers",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "keywords": [
@@ -13,14 +15,15 @@
     "smart-contracts",
     "hardhat",
     "hardhat-plugin",
+    "hardhat-deploy",
     "ethers.js"
   ],
   "scripts": {
-    "lint:fix": "node ../../node_modules/prettier/bin-prettier.js --write \"src/**/*.{js,ts}\" \"test/**/*.{js,ts}\" && yarn lint --fix",
-    "lint": "node ../../node_modules/tslint/bin/tslint --config tslint.json --project ./tsconfig.json",
-    "test": "node ../../node_modules/mocha/bin/mocha --recursive \"test/**/*.ts\" --exit",
-    "build": "node ../../node_modules/typescript/bin/tsc --build .",
-    "clean": "node ../../node_modules/rimraf/bin.js dist"
+    "lint:fix": "prettier --write src/**/*.{js,ts} test/**/*.{js,ts} && yarn lint --fix",
+    "lint": "tslint --config tslint.json --project tsconfig.json",
+    "test": "mocha --recursive \"test/index.ts\" --exit",
+    "build": "tsc",
+    "clean": "rimraf dist"
   },
   "files": [
     "dist/src/",
@@ -29,14 +32,29 @@
     "README.md"
   ],
   "devDependencies": {
+    "@changesets/cli": "^2.11.2",
     "@types/chai": "^4.2.0",
     "@types/fs-extra": "^5.1.0",
+    "@types/mocha": "^5.2.5",
+    "@types/node": "^8.10.38",
     "chai": "^4.2.0",
+    "detect-port": "^1.3.0",
     "ethers": "^5.0.0",
-    "hardhat": "^0.1.0-rc.0"
+    "ganache-cli": "^6.12.0",
+    "hardhat": "^2.0.0",
+    "mocha": "^5.2.0",
+    "prettier": "^1.17.0",
+    "rimraf": "^3.0.2",
+    "source-map-support": "^0.5.12",
+    "ts-node": "^8.1.0",
+    "tslint": "^5.16.0",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-consistent-codestyle": "^1.16.0",
+    "tslint-plugin-prettier": "^2.0.1",
+    "typescript": "^3.4.5"
   },
   "peerDependencies": {
     "ethers": "^5.0.0",
-    "hardhat": "^0.1.0-rc.0"
+    "hardhat": "^2.0.0"
   }
 }

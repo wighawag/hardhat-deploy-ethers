@@ -1,13 +1,19 @@
 {
-  "extends": "../../config/typescript/tsconfig.json",
   "compilerOptions": {
+    "target": "ES2017",
+    "module": "commonjs",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": true,
+    "esModuleInterop": true,
+    "noEmitOnError": true,
     "outDir": "./dist",
-    "composite": true
+    "rootDirs": ["./src", "./test"]
   },
-  "exclude": ["./dist", "./node_modules", "./test/**/hardhat.config.ts"],
-  "references": [
-    {
-      "path": "../hardhat-core/src"
-    }
+  "exclude": ["dist", "node_modules"],
+  "include": [
+    "./test",
+    "./src"    
   ]
 }

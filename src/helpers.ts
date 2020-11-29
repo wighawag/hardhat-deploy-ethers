@@ -23,7 +23,66 @@ export interface FactoryOptions {
   libraries?: Libraries;
 }
 
-const pluginName = "hardhat-ethers";
+const pluginName = "hardhat-deploy-ethers";
+
+async function _getSigner(
+  hre: HardhatRuntimeEnvironment,
+  signer: ethers.Signer | string | undefined
+): Promise<SignerWithAddress | undefined> {
+  const { SignerWithAddress: SignerWithAddressImpl } = await import(
+    "./signer-with-address"
+  );
+  let ethersSigner: SignerWithAddress | undefined;
+  if (signer === undefined) {
+    const signers = await hre.ethers.getSigners();
+    if (signers.length > 0) {
+      ethersSigner = signers[0];
+    }
+  } else if (typeof signer === "string") {
+    ethersSigner = await SignerWithAddressImpl.create(hre.ethers.provider.getSigner(signer));
+  } else {
+    ethersSigner =await SignerWithAddressImpl.create(signer)
+  }
+  return ethersSigner;
+}
+
+async function _getArtifact(
+  hre: HardhatRuntimeEnvironment,
+  name: string
+): Promise<Artifact> {
+  const deployments = (hre as any).deployments;
+  if (deployments !== undefined) {
+    return deployments.getArtifact(name);
+  }
+  return hre.artifacts.readArtifact(name);
+}
+
+export async function getSignerOrNull(
+  hre: HardhatRuntimeEnvironment,
+  address: string
+): Promise<SignerWithAddress | null> {
+  if (!address) {
+    throw new Error("need to specify address");
+  }
+  const signer = await _getSigner(hre, address);
+  if (signer === undefined) {
+    return null;
+  } else {
+    return signer;
+  }
+}
+
+
+export async function getSigner(
+  hre: HardhatRuntimeEnvironment,
+  address: string
+): Promise<SignerWithAddress> {
+  const signer = await getSignerOrNull(hre, address);
+  if (!signer) {
+    throw new Error(`no signer for ${address}`);
+  }
+  return signer;
+}
 
 export async function getSigners(
   hre: HardhatRuntimeEnvironment
@@ -44,32 +103,105 @@ export async function getSigners(
   return signersWithAddress;
 }
 
+export async function getNamedSigners(hre: HardhatRuntimeEnvironment): Promise<Record<string, SignerWithAddress>> {
+  const getNamedAccounts = (hre as any).getNamedAccounts;
+  if (getNamedAccounts !== undefined) {
+    const namedAccounts = (await getNamedAccounts()) as any;
+    const namedSigners: Record<string, SignerWithAddress> = {};
+    for (const name of Object.keys(namedAccounts)) {
+      try {
+        const address = namedAccounts[name];
+        if (address) {
+          const signer = await _getSigner(hre, address); // TODO cache ?
+          if (signer) {
+            namedSigners[name] = signer;
+          }
+        }
+      } catch(e) {}
+    }
+    return namedSigners;
+  }
+  throw new Error(
+    `No Deployment Plugin Installed, try 'import "harhdat-deploy"'`
+  ); 
+}
+
+export async function getUnnamedSigners(hre: HardhatRuntimeEnvironment): Promise<SignerWithAddress[]> {
+  const getUnnamedAccounts = (hre as any).getUnnamedAccounts;
+  if (getUnnamedAccounts !== undefined) {
+    const unnamedAccounts = (await getUnnamedAccounts()) as string[];
+    const unnamedSigners: SignerWithAddress[] = [];
+    for (const address of unnamedAccounts) {
+      if (address) {
+        try {
+          const signer = await _getSigner(hre, address);
+          if (signer) {
+            unnamedSigners.push(signer); // TODO cache ?
+          }
+        } catch(e) {}
+      }
+    }
+    return unnamedSigners;
+  }
+  throw new Error(
+    `No Deployment Plugin Installed, try 'import "harhdat-deploy"'`
+  );
+}
+
+
+export async function getNamedSignerOrNull(hre: HardhatRuntimeEnvironment, name: string): Promise<SignerWithAddress| null> {
+  const getNamedAccounts = (hre as any).getNamedAccounts;
+  if (getNamedAccounts !== undefined) {
+    const namedAccounts = (await getNamedAccounts()) as any;
+    const address = namedAccounts[name];
+    if (!address) {
+      throw new Error(`no account named ${name}`);
+    }
+    const signer = await _getSigner(hre, address);
+    if (signer) {
+      return signer;
+    }
+    return null;
+  }
+  throw new Error(
+    `No Deployment Plugin Installed, try 'import "harhdat-deploy"'`
+  );
+}
+
+export async function getNamedSigner(hre: HardhatRuntimeEnvironment, name: string): Promise<SignerWithAddress> {
+  const signer = await getNamedSignerOrNull(hre, name);
+  if (!signer) {
+    throw new Error(`no signer for ${name}`)
+  }
+  return signer;
+}
+
 export function getContractFactory(
   hre: HardhatRuntimeEnvironment,
   name: string,
-  signerOrOptions?: ethers.Signer | FactoryOptions
+  signerOrOptions?: ethers.Signer | string | FactoryOptions
 ): Promise<ethers.ContractFactory>;
 
 export function getContractFactory(
   hre: HardhatRuntimeEnvironment,
   abi: any[],
   bytecode: ethers.utils.BytesLike,
-  signer?: ethers.Signer
+  signer?: ethers.Signer | string
 ): Promise<ethers.ContractFactory>;
 
 export async function getContractFactory(
   hre: HardhatRuntimeEnvironment,
   nameOrAbi: string | any[],
   bytecodeOrFactoryOptions?:
-    | (ethers.Signer | FactoryOptions)
+    | (ethers.Signer | string | FactoryOptions)
     | ethers.utils.BytesLike,
-  signer?: ethers.Signer
+  signer?: ethers.Signer | string
 ) {
   if (typeof nameOrAbi === "string") {
     const contractFactory = await getContractFactoryByName(
       hre,
       nameOrAbi,
-      bytecodeOrFactoryOptions as ethers.Signer | FactoryOptions | undefined
+      bytecodeOrFactoryOptions as ethers.Signer | string | FactoryOptions | undefined
     );
 
     if (contractFactory.bytecode === "0x") {
@@ -83,6 +215,11 @@ If you want to call a contract using ${nameOrAbi} as its interface use the "getC
     return contractFactory;
   }
 
+  // will fallback on signers[0]
+  // if (!signer) {
+  //   throw new Error("need to specify signer or address");
+  // }
+
   return getContractFactoryByAbiAndBytecode(
     hre,
     nameOrAbi,
@@ -92,7 +229,7 @@ If you want to call a contract using ${nameOrAbi} as its interface use the "getC
 }
 
 function isFactoryOptions(
-  signerOrOptions?: ethers.Signer | FactoryOptions
+  signerOrOptions?: ethers.Signer | string | FactoryOptions
 ): signerOrOptions is FactoryOptions {
   const { Signer } = require("ethers") as typeof ethers;
   if (signerOrOptions === undefined || signerOrOptions instanceof Signer) {
@@ -105,11 +242,11 @@ function isFactoryOptions(
 async function getContractFactoryByName(
   hre: HardhatRuntimeEnvironment,
   contractName: string,
-  signerOrOptions?: ethers.Signer | FactoryOptions
+  signerOrOptions?: ethers.Signer | string | FactoryOptions
 ) {
   const { utils } = require("ethers") as typeof ethers;
 
-  const artifact = await hre.artifacts.readArtifact(contractName);
+  const artifact = await _getArtifact(hre, contractName);
 
   const neededLibraries: Array<{
     sourceName: string;
@@ -123,7 +260,7 @@ async function getContractFactoryByName(
     }
   }
 
-  let signer: ethers.Signer | undefined;
+  let signer: ethers.Signer | undefined | string;
   let libraries: Libraries = {};
   if (isFactoryOptions(signerOrOptions)) {
     signer = signerOrOptions.signer;
@@ -131,6 +268,11 @@ async function getContractFactoryByName(
   } else {
     signer = signerOrOptions;
   }
+
+  // will fallback on signers[0]
+  // if (!signer) {
+  //   throw new Error("need to specify signer or address");
+  // }
 
   const linksToApply: Map<string, Link> = new Map();
   for (const [linkedLibraryName, linkedLibraryAddress] of Object.entries(
@@ -234,28 +376,30 @@ export async function getContractFactoryByAbiAndBytecode(
   hre: HardhatRuntimeEnvironment,
   abi: any[],
   bytecode: ethers.utils.BytesLike,
-  signer?: ethers.Signer
+  signer?: ethers.Signer | string
 ) {
   const { ContractFactory } = require("ethers") as typeof ethers;
 
-  if (signer === undefined) {
-    const signers = await hre.ethers.getSigners();
-    signer = signers[0];
-  }
+  // will fallback on signers[0]
+  // if (!signer) {
+  //   throw new Error("need to specify signer or address");
+  // }
+  
+  const ethersSigner = await _getSigner(hre, signer);
 
   const abiWithAddedGas = addGasToAbiMethodsIfNecessary(
     hre.network.config,
     abi
   );
 
-  return new ContractFactory(abiWithAddedGas, bytecode, signer);
+  return new ContractFactory(abiWithAddedGas, bytecode, ethersSigner);
 }
 
 export async function getContractAt(
   hre: HardhatRuntimeEnvironment,
   nameOrAbi: string | any[],
   address: string,
-  signer?: ethers.Signer
+  signer?: ethers.Signer | string
 ) {
   const { Contract } = require("ethers") as typeof ethers;
 
@@ -264,17 +408,50 @@ export async function getContractAt(
     return factory.attach(address);
   }
 
-  if (signer === undefined) {
-    const signers = await hre.ethers.getSigners();
-    signer = signers[0];
-  }
+  const ethersSigner = await _getSigner(hre, signer);
 
   const abiWithAddedGas = addGasToAbiMethodsIfNecessary(
     hre.network.config,
     nameOrAbi
   );
 
-  return new Contract(address, abiWithAddedGas, signer);
+  return new Contract(address, abiWithAddedGas, ethersSigner || hre.ethers.provider);
+}
+
+export async function getContract(
+  env: HardhatRuntimeEnvironment,
+  contractName: string,
+  signer?: ethers.Signer | string
+): Promise<ethers.Contract> {
+  const contract = await getContractOrNull(env, contractName, signer);
+  if (contract === null) {
+    throw new Error(`No Contract deployed with name ${contractName}`);
+  }
+  return contract;
+}
+
+export async function getContractOrNull(
+  env: HardhatRuntimeEnvironment,
+  contractName: string,
+  signer?: ethers.Signer | string
+): Promise<ethers.Contract | null> {
+  const deployments = (env as any).deployments;
+  if (deployments !== undefined) {
+    const get = deployments.getOrNull;
+    const contract = (await get(contractName)) as any;
+    if (contract === undefined) {
+      return null;
+    }
+    return getContractAt(
+      env,
+      contract.abi,
+      contract.address,
+      signer
+    );
+  }
+  throw new Error(
+    `No Deployment Plugin Installed, try 'import "harhdat-deploy"'`
+  );
 }
 
 // This helper adds a `gas` field to the ABI function elements if the network

@@ -5,6 +5,9 @@
 /build-test/
 /dist
 
+artifacts/
+cache/
+
 # Code coverage artifacts
 /coverage
 /.nyc_output

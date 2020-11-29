@@ -1,7 +1,6 @@
-[![npm](https://img.shields.io/npm/v/@nomiclabs/hardhat-ethers.svg)](https://www.npmjs.com/package/@nomiclabs/hardhat-ethers)
 [![hardhat](https://hardhat.org/hardhat-plugin-badge.svg?1)](https://hardhat.org)
 
-# hardhat-ethers
+# hardhat-deploy-ethers
 
 [Hardhat](https://hardhat.org) plugin for integration with [ethers.js](https://github.com/ethers-io/ethers.js/).
 
@@ -9,16 +8,19 @@
 
 This plugin brings to Hardhat the Ethereum library `ethers.js`, which allows you to interact with the Ethereum blockchain in a simple way.
 
+it is in based on the existing effort by @nomiclabs : `@nomiclabs/hardhat-ethers`
+And add extra functionality and the ability to get signer from address string
+
 ## Installation
 
 ```bash
-npm install --save-dev @nomiclabs/hardhat-ethers 'ethers@^5.0.0'
+npm install --save-dev hardhat-deploy-ethers ethers
 ```
 
 And add the following statement to your `hardhat.config.js`:
 
 ```js
-usePlugin("@nomiclabs/hardhat-ethers");
+require("hardhat-deploy-ethers");
 ```
 
 ## Tasks
@@ -29,8 +31,7 @@ This plugin creates no additional tasks.
 
 This plugins adds an `ethers` object to the Hardhat Runtime Environment.
 
-This object has the same API than `ethers.js`, with some extra Hardhat-specific
-functionality.
+This object has add some extra `hardhat-deploy` specific functionalities.
 
 ### Provider object
 
@@ -51,19 +52,31 @@ interface FactoryOptions {
   libraries?: Libraries;
 }
 
-function getContractFactory(name: string): Promise<ethers.ContractFactory>;
+function getContractFactory(name: string, signer?: ethers.Signer | string): Promise<ethers.ContractFactory>;
 
-function getContractFactory(name: string, signer: ethers.Signer): Promise<ethers.ContractFactory>;
+function getContractFactory(abi: any[], bytecode: ethers.BytesLike, signer?: ethers.Signer | string): Promise<ethers.ContractFactory>;
 
 function getContractFactory(name: string, factoryOptions: FactoryOptions): Promise<ethers.ContractFactory>;
 
 
-function getContractAt(nameOrAbi: string | any[], address: string, signer?: ethers.Signer): Promise<ethers.Contract>;
+function getContractAt(nameOrAbi: string | any[], address: string, signer?: ethers.Signer | string): Promise<ethers.Contract>;
 
 function getSigners() => Promise<ethers.Signer[]>;
+
+function getSigner(address: string) => Promise<ethers.Signer>;
+function getSignerOrNull: (address: string) => Promise<SignerWithAddress | null>;
+function getNamedSigners: () => Promise<Record<string, SignerWithAddress>>;
+function getNamedSigner: (name: string) => Promise<SignerWithAddress>;
+function getNamedSignerOrNull: (name: string) => Promise<SignerWithAddress | null>;
+function getUnnamedSigners: () => Promise<SignerWithAddress[]>;
+
+function getContract(deploymentName: string, signer?: ethers.Signer | string): Promise<ethers.Contract>;
+function getContractOrNull(deploymentName: string, signer?: ethers.Signer | string): Promise<ethers.Contract | null>;
+
 ```
 
-The `Contract`s and `ContractFactory`s returned by these helpers are connected to the first signer returned by `getSigners` be default.
+The `Contract`s and `ContractFactory`s returned by these helpers are connected to the first signer returned by `getSigners` by default, if available.
+For Contracts if no signers are available it fallback to a read-only provider.
 
 ## Usage
 
@@ -72,7 +85,7 @@ There are no additional steps you need to take for this plugin to work.
 Install it and access ethers through the Hardhat Runtime Environment anywhere you need it (tasks, scripts, tests, etc). For example, in your `hardhat.config.js`:
 
 ```js
-usePlugin("@nomiclabs/hardhat-ethers");
+usePlugin("hardhat-deploy-ethers");
 
 // task action function receives the Hardhat Runtime Environment as second argument
 task(
@@ -111,24 +124,10 @@ This allows you to create a contract factory for the `Example` contract and link
 
 To create a contract factory, all libraries must be linked. An error will be thrown informing you of any missing library.
 
-## TypeScript support
 
-If your project uses TypeScript, you need to create a `hardhat-env.d.ts` file like this:
+It also automatically integrate with the `hardhat-deploy` plugin if detected 
 
-``` typescript
-/// <reference types="@nomiclabs/hardhat-ethers" />
+```js
+const contract = await hre.ethers.getContract('<deploymentName>');
 ```
 
-If you already have this file, just add that line to it.
-
-
-Then you have to include that file in the `files` array of your `tsconfig.json`:
-
-```json
-{
-  ...
-  "files": [..., "hardhat-env.d.ts"]
-}
-```
-
-using the relative path from the `tsconfig.json` to your `hardhat-env.d.ts`.
