@@ -1,4 +1,4 @@
-[![hardhat](https://hardhat.org/hardhat-plugin-badge.svg?1)](https://hardhat.org)
+[![hardhat](https://hardhat.org/buidler-plugin-badge.svg?1)](https://hardhat.org)
 
 # hardhat-deploy-ethers
 
@@ -21,6 +21,12 @@ And add the following statement to your `hardhat.config.js`:
 
 ```js
 require("hardhat-deploy-ethers");
+```
+
+Or, if you are using TypeScript, add this to your `hardhat.config.ts`:
+
+```ts
+import "hardhat-deploy-ethers";
 ```
 
 ## Tasks
@@ -130,4 +136,3 @@ It also automatically integrate with the `hardhat-deploy` plugin if detected
 ```js
 const contract = await hre.ethers.getContract('<deploymentName>');
 ```
-

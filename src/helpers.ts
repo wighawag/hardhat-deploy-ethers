@@ -198,21 +198,11 @@ export async function getContractFactory(
   signer?: ethers.Signer | string
 ) {
   if (typeof nameOrAbi === "string") {
-    const contractFactory = await getContractFactoryByName(
+    return getContractFactoryByName(
       hre,
       nameOrAbi,
       bytecodeOrFactoryOptions as ethers.Signer | string | FactoryOptions | undefined
     );
-
-    if (contractFactory.bytecode === "0x") {
-      throw new NomicLabsHardhatPluginError(
-        pluginName,
-        `You are trying to create a contract factory for the contract ${nameOrAbi}, which is abstract and can't be deployed.
-If you want to call a contract using ${nameOrAbi} as its interface use the "getContractAt" function instead.`
-      );
-    }
-
-    return contractFactory;
   }
 
   // will fallback on signers[0]
@@ -244,9 +234,40 @@ async function getContractFactoryByName(
   contractName: string,
   signerOrOptions?: ethers.Signer | string | FactoryOptions
 ) {
-  const { utils } = require("ethers") as typeof ethers;
-
   const artifact = await _getArtifact(hre, contractName);
+
+  let libraries: Libraries = {};
+  let signer: ethers.Signer | string | undefined;
+  if (isFactoryOptions(signerOrOptions)) {
+    signer = signerOrOptions.signer;
+    libraries = signerOrOptions.libraries ?? {};
+  } else {
+    signer = signerOrOptions;
+  }
+
+  if (artifact.bytecode === "0x") {
+    throw new NomicLabsHardhatPluginError(
+      pluginName,
+      `You are trying to create a contract factory for the contract ${contractName}, which is abstract and can't be deployed.
+If you want to call a contract using ${contractName} as its interface use the "getContractAt" function instead.`
+    );
+  }
+
+  const linkedBytecode = await collectLibrariesAndLink(artifact, libraries);
+
+  return getContractFactoryByAbiAndBytecode(
+    hre,
+    artifact.abi,
+    linkedBytecode,
+    signer
+  );
+}
+
+async function collectLibrariesAndLink(
+  artifact: Artifact,
+  libraries: Libraries
+) {
+  const { utils } = require("ethers") as typeof ethers;
 
   const neededLibraries: Array<{
     sourceName: string;
@@ -260,20 +281,6 @@ async function getContractFactoryByName(
     }
   }
 
-  let signer: ethers.Signer | undefined | string;
-  let libraries: Libraries = {};
-  if (isFactoryOptions(signerOrOptions)) {
-    signer = signerOrOptions.signer;
-    libraries = signerOrOptions.libraries ?? {};
-  } else {
-    signer = signerOrOptions;
-  }
-
-  // will fallback on signers[0]
-  // if (!signer) {
-  //   throw new Error("need to specify signer or address");
-  // }
-
   const linksToApply: Map<string, Link> = new Map();
   for (const [linkedLibraryName, linkedLibraryAddress] of Object.entries(
     libraries
@@ -281,7 +288,7 @@ async function getContractFactoryByName(
     if (!utils.isAddress(linkedLibraryAddress)) {
       throw new NomicLabsHardhatPluginError(
         pluginName,
-        `You tried to link the contract ${contractName} with the library ${linkedLibraryName}, but provided this invalid address: ${linkedLibraryAddress}`
+        `You tried to link the contract ${artifact.contractName} with the library ${linkedLibraryName}, but provided this invalid address: ${linkedLibraryAddress}`
       );
     }
 
@@ -306,7 +313,7 @@ ${libraryFQNames}`;
       }
       throw new NomicLabsHardhatPluginError(
         pluginName,
-        `You tried to link the contract ${contractName} with ${linkedLibraryName}, which is not one of its libraries.
+        `You tried to link the contract ${artifact.contractName} with ${linkedLibraryName}, which is not one of its libraries.
 ${detailedMessage}`
       );
     }
@@ -318,7 +325,7 @@ ${detailedMessage}`
         .join("\n");
       throw new NomicLabsHardhatPluginError(
         pluginName,
-        `The library name ${linkedLibraryName} is ambiguous for the contract ${contractName}.
+        `The library name ${linkedLibraryName} is ambiguous for the contract ${artifact.contractName}.
 It may resolve to one of the following libraries:
 ${matchingNeededLibrariesFQNs}
 
@@ -357,22 +364,18 @@ Remove one of them and review your library links before proceeding.`
 
     throw new NomicLabsHardhatPluginError(
       pluginName,
-      `The contract ${contractName} is missing links for the following libraries:
-${missingLibraries}`
+      `The contract ${artifact.contractName} is missing links for the following libraries:
+${missingLibraries}
+
+Learn more about linking contracts at https://hardhat.org/plugins/nomiclabs-hardhat-ethers.html#library-linking
+`
     );
   }
 
-  const linkedBytecode = linkBytecode(artifact, [...linksToApply.values()]);
-
-  return getContractFactoryByAbiAndBytecode(
-    hre,
-    artifact.abi,
-    linkedBytecode,
-    signer
-  );
+  return linkBytecode(artifact, [...linksToApply.values()]);
 }
 
-export async function getContractFactoryByAbiAndBytecode(
+async function getContractFactoryByAbiAndBytecode(
   hre: HardhatRuntimeEnvironment,
   abi: any[],
   bytecode: ethers.utils.BytesLike,
@@ -404,7 +407,13 @@ export async function getContractAt(
   const { Contract } = require("ethers") as typeof ethers;
 
   if (typeof nameOrAbi === "string") {
-    const factory = await getContractFactoryByName(hre, nameOrAbi, signer);
+    const artifact = await hre.artifacts.readArtifact(nameOrAbi);
+    const factory = await getContractFactoryByAbiAndBytecode(
+      hre,
+      artifact.abi,
+      "0x",
+      signer
+    );
     return factory.attach(address);
   }
 

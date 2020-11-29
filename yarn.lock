@@ -2113,10 +2113,10 @@ hard-rejection@^2.1.0:
   resolved "https://registry.yarnpkg.com/hard-rejection/-/hard-rejection-2.1.0.tgz#1c6eda5c1685c63942766d79bb40ae773cecd883"
   integrity sha512-VIZB+ibDhx7ObhAe7OVtoEbuP4h/MuOTHJ+J8h/eBXotJYl0fBgR72xDFCKgIh22OJZIOVNxBMWuhAr10r8HdA==
 
-hardhat@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/hardhat/-/hardhat-2.0.0.tgz#d2d5fcbcdbb9b6ec13e7c8e93706ddf0e5ac2a70"
-  integrity sha512-kwl4fTn5jU4n3rlT1PucKETZ6qWzZiGgcUAqoqLc2ZADbcm1N9KUCbKzleidvgn+gTYcvVkhPTskkU2Yop6Lag==
+hardhat@^2.0.4:
+  version "2.0.4"
+  resolved "https://registry.yarnpkg.com/hardhat/-/hardhat-2.0.4.tgz#f312c79d57d81861d9a837fbb8cb64302735b58f"
+  integrity sha512-TPDthnVJ6JNT38l769rRAJk3tkbGUZEaVSGW6TFXN7OuB08VZMH0dVyvUhnRas9BByFozTfIjr6AgnZ7S8o5PQ==
   dependencies:
     "@nomiclabs/ethereumjs-vm" "^4.1.1"
     "@sentry/node" "^5.18.1"

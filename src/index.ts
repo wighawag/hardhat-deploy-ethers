@@ -3,20 +3,25 @@ import { extendEnvironment } from "hardhat/config";
 import { lazyObject } from "hardhat/plugins";
 
 import { getContractAt, getContractFactory, getSigners, getSigner, getContract, getContractOrNull, getNamedSigners, getNamedSigner, getSignerOrNull, getNamedSignerOrNull, getUnnamedSigners } from "./helpers";
+import type * as ProviderProxyT from "./provider-proxy";
 import "./type-extensions";
 
 extendEnvironment((hre) => {
   hre.ethers = lazyObject(() => {
-    const { EthersProviderWrapper } = require("./ethers-provider-wrapper");
+    const {
+      createProviderProxy,
+    } = require("./provider-proxy") as typeof ProviderProxyT;
 
     const { ethers } = require("ethers") as typeof EthersT;
+
+    const providerProxy = createProviderProxy(hre.network.provider);
 
     return {
       ...ethers,
 
       // The provider wrapper should be removed once this is released
       // https://github.com/nomiclabs/hardhat/pull/608
-      provider: new EthersProviderWrapper(hre.network.provider),
+      provider: providerProxy,
 
       // We cast to any here as we hit a limitation of Function#bind and
       // overloads. See: https://github.com/microsoft/TypeScript/issues/28582
