@@ -1,51 +1,35 @@
-import type EthersT from "ethers";
-import { extendEnvironment } from "hardhat/config";
-import { lazyObject } from "hardhat/plugins";
+import {extendEnvironment} from 'hardhat/config';
+import './type-extensions';
+import {lazyObject} from 'hardhat/plugins';
+import '@nomiclabs/hardhat-ethers';
 
-import { getContractAt, getContractFactory, getSigners, getSigner, getContract, getContractOrNull, getNamedSigners, getNamedSigner, getSignerOrNull, getNamedSignerOrNull, getUnnamedSigners } from "./helpers";
-import type * as ProviderProxyT from "./provider-proxy";
-import "./type-extensions";
+import {
+  getContractFactoryWithSignerAddress,
+  getContractAtWithSignerAddress,
+  getSignerOrNull,
+  getNamedSigners,
+  getNamedSigner,
+  getNamedSignerOrNull,
+  getUnnamedSigners,
+  getContract,
+  getContractOrNull,
+} from './helpers';
 
 extendEnvironment((hre) => {
+  const prevEthers = hre.ethers;
   hre.ethers = lazyObject(() => {
-    const {
-      createProviderProxy,
-    } = require("./provider-proxy") as typeof ProviderProxyT;
-
-    const { ethers } = require("ethers") as typeof EthersT;
-
-    const providerProxy = createProviderProxy(hre.network.provider);
-
-    return {
-      ...ethers,
-
-      // The provider wrapper should be removed once this is released
-      // https://github.com/nomiclabs/hardhat/pull/608
-      provider: providerProxy,
-
-      // We cast to any here as we hit a limitation of Function#bind and
-      // overloads. See: https://github.com/microsoft/TypeScript/issues/28582
-      getContractFactory: getContractFactory.bind(null, hre) as any,
-      getContractAt: getContractAt.bind(null, hre),
-      
-      getSigners: async () => getSigners(hre),
-      getSigner: async(address) => getSigner(hre, address),
-      getSignerOrNull: async(address) => getSignerOrNull(hre, address),
-
-      getNamedSigners: async () => getNamedSigners(hre),
-      getNamedSigner: async(name) => getNamedSigner(hre, name),
-      getNamedSignerOrNull: async (name) => getNamedSignerOrNull(hre, name),
-      getUnnamedSigners: async () => getUnnamedSigners(hre),
-  
-
-      getContract: async (
-        name,
-        signer
-      ) => getContract(hre, name, signer),
-      getContractOrNull: async (
-        name,
-        signer
-      ) => getContractOrNull(hre, name, signer),
-    };
+    // We cast to any here as we hit a limitation of Function#bind and
+    // overloads. See: https://github.com/microsoft/TypeScript/issues/28582
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    prevEthers.getContractFactoryWithSignerAddress = getContractFactoryWithSignerAddress.bind(null, hre) as any;
+    prevEthers.getContractAtWithSignerAddress = getContractAtWithSignerAddress.bind(null, hre);
+    prevEthers.getSignerOrNull = (address) => getSignerOrNull(hre, address);
+    prevEthers.getNamedSigners = () => getNamedSigners(hre);
+    prevEthers.getNamedSigner = (name) => getNamedSigner(hre, name);
+    prevEthers.getNamedSignerOrNull = (name) => getNamedSignerOrNull(hre, name);
+    prevEthers.getUnnamedSigners = () => getUnnamedSigners(hre);
+    prevEthers.getContract = getContract.bind(null, hre);
+    prevEthers.getContractOrNull = getContractOrNull.bind(null, hre);
+    return prevEthers;
   });
 });

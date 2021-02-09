@@ -5,15 +5,11 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "strict": true,
-    "esModuleInterop": true,
-    "noEmitOnError": true,
     "outDir": "./dist",
-    "rootDirs": ["./src", "./test"]
+    "strict": true,
+    "rootDirs": ["./src", "./test"],
+    "esModuleInterop": true
   },
   "exclude": ["dist", "node_modules"],
-  "include": [
-    "./test",
-    "./src"    
-  ]
+  "include": ["./test", "./src"]
 }

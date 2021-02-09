@@ -2,19 +2,16 @@
 
 # hardhat-deploy-ethers
 
-[Hardhat](https://hardhat.org) plugin for integration with [ethers.js](https://github.com/ethers-io/ethers.js/).
+[Hardhat](https://hardhat.org) plugin extension of hardhat-ethers to support extra feature related to hardhat-deploy plugin
 
 ## What
 
-This plugin brings to Hardhat the Ethereum library `ethers.js`, which allows you to interact with the Ethereum blockchain in a simple way.
-
-it is in based on the existing effort by @nomiclabs : `@nomiclabs/hardhat-ethers`
-And add extra functionality and the ability to get signer from address string
+This plugin add extra features on top @nomiclabs : `@nomiclabs/hardhat-ethers for user of hardhat-deploy plugin.
 
 ## Installation
 
 ```bash
-npm install --save-dev hardhat-deploy-ethers ethers
+npm install --save-dev hardhat-deploy-ethers ethers @nomiclabs/hardhat-ethers
 ```
 
 And add the following statement to your `hardhat.config.js`:
@@ -35,14 +32,7 @@ This plugin creates no additional tasks.
 
 ## Environment extensions
 
-This plugins adds an `ethers` object to the Hardhat Runtime Environment.
-
-This object has add some extra `hardhat-deploy` specific functionalities.
-
-### Provider object
-
-A `provider` field is added to `ethers`, which is an `ethers.providers.Provider`
-automatically connected to the selected network.
+This object has add some extra `hardhat-deploy` specific functionalities by adding new extra field to `hre.ethers`
 
 ### Helpers
 
@@ -53,85 +43,64 @@ interface Libraries {
   [libraryName: string]: string;
 }
 
-interface FactoryOptions {
-  signer?: ethers.Signer;
+interface FactoryOptionsWithSignerAddress {
+  signer: string;
   libraries?: Libraries;
 }
+export function getContractFactoryWithSignerAddress(
+  hre: HardhatRuntimeEnvironment,
+  name: string,
+  signerOrOptions: string | FactoryOptionsWithSignerAddress
+): Promise<ethers.ContractFactory>;
+export function getContractFactoryWithSignerAddress(
+  hre: HardhatRuntimeEnvironment,
+  abi: any[],
+  bytecode: ethers.utils.BytesLike,
+  signer: string
+): Promise<ethers.ContractFactory>;
+export async function getContractAtWithSignerAddress(
+  hre: HardhatRuntimeEnvironment,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  nameOrAbi: string | any[],
+  address: string,
+  signer: string
+): Promise<ethers.Contract>;
 
-function getContractFactory(name: string, signer?: ethers.Signer | string): Promise<ethers.ContractFactory>;
+export async function getSignerOrNull(
+  hre: HardhatRuntimeEnvironment,
+  address: string
+): Promise<SignerWithAddress | null>;
 
-function getContractFactory(abi: any[], bytecode: ethers.BytesLike, signer?: ethers.Signer | string): Promise<ethers.ContractFactory>;
+export async function getNamedSigners(hre: HardhatRuntimeEnvironment): Promise<Record<string, SignerWithAddress>>;
 
-function getContractFactory(name: string, factoryOptions: FactoryOptions): Promise<ethers.ContractFactory>;
+export async function getNamedSigner(hre: HardhatRuntimeEnvironment, name: string): Promise<SignerWithAddress>;
 
+export async function getNamedSignerOrNull(
+  hre: HardhatRuntimeEnvironment,
+  name: string
+): Promise<SignerWithAddress | null>;
 
-function getContractAt(nameOrAbi: string | any[], address: string, signer?: ethers.Signer | string): Promise<ethers.Contract>;
+export async function getUnnamedSigners(hre: HardhatRuntimeEnvironment): Promise<SignerWithAddress[]>;
 
-function getSigners() => Promise<ethers.Signer[]>;
+export async function getContract(
+  hre: HardhatRuntimeEnvironment,
+  name: string,
+  signer?: ethers.Signer | string
+): Promise<ethers.Contract>;
 
-function getSigner(address: string) => Promise<ethers.Signer>;
-function getSignerOrNull: (address: string) => Promise<SignerWithAddress | null>;
-function getNamedSigners: () => Promise<Record<string, SignerWithAddress>>;
-function getNamedSigner: (name: string) => Promise<SignerWithAddress>;
-function getNamedSignerOrNull: (name: string) => Promise<SignerWithAddress | null>;
-function getUnnamedSigners: () => Promise<SignerWithAddress[]>;
-
-function getContract(deploymentName: string, signer?: ethers.Signer | string): Promise<ethers.Contract>;
-function getContractOrNull(deploymentName: string, signer?: ethers.Signer | string): Promise<ethers.Contract | null>;
+export async function getContractOrNull(
+  hre: HardhatRuntimeEnvironment,
+  name: string,
+  signer?: ethers.Signer | string
+): Promise<ethers.Contract | null>;
 
 ```
 
-The `Contract`s and `ContractFactory`s returned by these helpers are connected to the first signer returned by `getSigners` by default, if available.
-For Contracts if no signers are available it fallback to a read-only provider.
 
 ## Usage
 
 There are no additional steps you need to take for this plugin to work.
 
-Install it and access ethers through the Hardhat Runtime Environment anywhere you need it (tasks, scripts, tests, etc). For example, in your `hardhat.config.js`:
-
-```js
-usePlugin("hardhat-deploy-ethers");
-
-// task action function receives the Hardhat Runtime Environment as second argument
-task(
-  "blockNumber",
-  "Prints the current block number",
-  async (_, { ethers }) => {
-    await ethers.provider.getBlockNumber().then((blockNumber) => {
-      console.log("Current block number: " + blockNumber);
-    });
-  }
-);
-
-module.exports = {};
-```
-
-And then run `npx hardhat blockNumber` to try it.
-
-Read the documentation on the [Hardhat Runtime Environment](https://hardhat.org/advanced/hardhat-runtime-environment.html) to learn how to access the HRE in different ways to use ethers.js from anywhere the HRE is accessible.
-
-### Library linking
-
-Some contracts need to be linked with libraries before they are deployed. You can pass the addresses of their libraries to the `getContractFactory` function with an object like this:
-
-```js
-const contractFactory = await this.env.ethers.getContractFactory(
-  "Example",
-  {
-    libraries: {
-      ExampleLib: "0x..."
-    }
-  }
-);
-```
-
-This allows you to create a contract factory for the `Example` contract and link its `ExampleLib` library references to the address `"0x..."`.
-
-To create a contract factory, all libraries must be linked. An error will be thrown informing you of any missing library.
-
-
-It also automatically integrate with the `hardhat-deploy` plugin if detected 
 
 ```js
 const contract = await hre.ethers.getContract('<deploymentName>');

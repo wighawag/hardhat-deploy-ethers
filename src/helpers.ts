@@ -1,132 +1,125 @@
-import type { ethers } from "ethers";
-import { NomicLabsHardhatPluginError } from "hardhat/plugins";
-import {
-  Artifact,
-  HardhatRuntimeEnvironment,
-  NetworkConfig,
-} from "hardhat/types";
+import type {ethers} from 'ethers';
+import {HardhatRuntimeEnvironment} from 'hardhat/types';
+import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
+import {FactoryOptionsWithSignerAddress} from './types';
 
-import type { SignerWithAddress } from "./signer-with-address";
-
-interface Link {
-  sourceName: string;
-  libraryName: string;
-  address: string;
-}
-
-export interface Libraries {
-  [libraryName: string]: string;
-}
-
-export interface FactoryOptions {
-  signer?: ethers.Signer;
-  libraries?: Libraries;
-}
-
-const pluginName = "hardhat-deploy-ethers";
-
-async function _getSigner(
+export function getContractFactoryWithSignerAddress(
   hre: HardhatRuntimeEnvironment,
-  signer: ethers.Signer | string | undefined
-): Promise<SignerWithAddress | undefined> {
-  const { SignerWithAddress: SignerWithAddressImpl } = await import(
-    "./signer-with-address"
-  );
-  let ethersSigner: SignerWithAddress | undefined;
-  if (signer === undefined) {
-    const signers = await hre.ethers.getSigners();
-    if (signers.length > 0) {
-      ethersSigner = signers[0];
+  name: string,
+  signerOrOptions: string | FactoryOptionsWithSignerAddress
+): Promise<ethers.ContractFactory>;
+
+export function getContractFactoryWithSignerAddress(
+  hre: HardhatRuntimeEnvironment,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  abi: any[],
+  bytecode: ethers.utils.BytesLike,
+  signer: string
+): Promise<ethers.ContractFactory>;
+
+export async function getContractFactoryWithSignerAddress(
+  hre: HardhatRuntimeEnvironment,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  nameOrAbi: string | any[],
+  bytecodeOrFactoryOptions?: (string | FactoryOptionsWithSignerAddress) | ethers.utils.BytesLike,
+  signer?: string
+): Promise<ethers.ContractFactory> {
+  let actualSigner: SignerWithAddress;
+  if (typeof nameOrAbi === 'string') {
+    if (typeof bytecodeOrFactoryOptions === 'string') {
+      actualSigner = await hre.ethers.getSigner(bytecodeOrFactoryOptions);
+      return hre.ethers.getContractFactory(nameOrAbi, actualSigner);
     }
-  } else if (typeof signer === "string") {
-    ethersSigner = await SignerWithAddressImpl.create(hre.ethers.provider.getSigner(signer));
-  } else {
-    ethersSigner =await SignerWithAddressImpl.create(signer)
+    const FactoryOptionsWithSignerAddress: FactoryOptionsWithSignerAddress = (bytecodeOrFactoryOptions as unknown) as FactoryOptionsWithSignerAddress;
+    actualSigner = await hre.ethers.getSigner(FactoryOptionsWithSignerAddress.signer);
+    return hre.ethers.getContractFactory(nameOrAbi, {
+      libraries: FactoryOptionsWithSignerAddress.libraries,
+      signer: actualSigner,
+    });
   }
-  return ethersSigner;
+  actualSigner = await hre.ethers.getSigner(signer as string);
+  return hre.ethers.getContractFactory(nameOrAbi, bytecodeOrFactoryOptions as ethers.utils.BytesLike, actualSigner);
 }
 
-async function _getArtifact(
+export async function getContractAtWithSignerAddress(
   hre: HardhatRuntimeEnvironment,
-  name: string
-): Promise<Artifact> {
-  const deployments = (hre as any).deployments;
-  if (deployments !== undefined) {
-    return deployments.getArtifact(name);
-  }
-  return hre.artifacts.readArtifact(name);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  nameOrAbi: string | any[],
+  address: string,
+  signer: string
+): Promise<ethers.Contract> {
+  const actualSigner = await hre.ethers.getSigner(signer);
+  return hre.ethers.getContractAt(nameOrAbi, address, actualSigner);
 }
 
 export async function getSignerOrNull(
   hre: HardhatRuntimeEnvironment,
   address: string
 ): Promise<SignerWithAddress | null> {
-  if (!address) {
-    throw new Error("need to specify address");
-  }
-  const signer = await _getSigner(hre, address);
-  if (signer === undefined) {
-    return null;
-  } else {
+  try {
+    // TODO do not use try catch
+    const signer = await hre.ethers.getSigner(address);
     return signer;
+  } catch (e) {
+    return null;
   }
-}
-
-
-export async function getSigner(
-  hre: HardhatRuntimeEnvironment,
-  address: string
-): Promise<SignerWithAddress> {
-  const signer = await getSignerOrNull(hre, address);
-  if (!signer) {
-    throw new Error(`no signer for ${address}`);
-  }
-  return signer;
-}
-
-export async function getSigners(
-  hre: HardhatRuntimeEnvironment
-): Promise<SignerWithAddress[]> {
-  const { SignerWithAddress: SignerWithAddressImpl } = await import(
-    "./signer-with-address"
-  );
-
-  const accounts = await hre.ethers.provider.listAccounts();
-  const signers = accounts.map((account: string) =>
-    hre.ethers.provider.getSigner(account)
-  );
-
-  const signersWithAddress = await Promise.all(
-    signers.map(SignerWithAddressImpl.create)
-  );
-
-  return signersWithAddress;
 }
 
 export async function getNamedSigners(hre: HardhatRuntimeEnvironment): Promise<Record<string, SignerWithAddress>> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getNamedAccounts = (hre as any).getNamedAccounts;
   if (getNamedAccounts !== undefined) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const namedAccounts = (await getNamedAccounts()) as any;
     const namedSigners: Record<string, SignerWithAddress> = {};
     for (const name of Object.keys(namedAccounts)) {
       try {
         const address = namedAccounts[name];
         if (address) {
-          const signer = await _getSigner(hre, address); // TODO cache ?
+          const signer = await getSignerOrNull(hre, address); // TODO cache ?
           if (signer) {
             namedSigners[name] = signer;
           }
         }
-      } catch(e) {}
+      } catch (e) {}
     }
     return namedSigners;
   }
-  throw new Error(
-    `No Deployment Plugin Installed, try 'import "harhdat-deploy"'`
-  ); 
+  throw new Error(`No Deployment Plugin Installed, try 'import "harhdat-deploy"'`);
+}
+
+export async function getNamedSigner(hre: HardhatRuntimeEnvironment, name: string): Promise<SignerWithAddress> {
+  const signer = await getNamedSignerOrNull(hre, name);
+  if (!signer) {
+    throw new Error(`no signer for ${name}`);
+  }
+  return signer;
+}
+
+export async function getNamedSignerOrNull(
+  hre: HardhatRuntimeEnvironment,
+  name: string
+): Promise<SignerWithAddress | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getNamedAccounts = (hre as any).getNamedAccounts;
+  if (getNamedAccounts !== undefined) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const namedAccounts = (await getNamedAccounts()) as any;
+    const address = namedAccounts[name];
+    if (!address) {
+      throw new Error(`no account named ${name}`);
+    }
+    const signer = await getSignerOrNull(hre, address);
+    if (signer) {
+      return signer;
+    }
+    return null;
+  }
+  throw new Error(`No Deployment Plugin Installed, try 'import "harhdat-deploy"'`);
 }
 
 export async function getUnnamedSigners(hre: HardhatRuntimeEnvironment): Promise<SignerWithAddress[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const getUnnamedAccounts = (hre as any).getUnnamedAccounts;
   if (getUnnamedAccounts !== undefined) {
     const unnamedAccounts = (await getUnnamedAccounts()) as string[];
@@ -134,386 +127,48 @@ export async function getUnnamedSigners(hre: HardhatRuntimeEnvironment): Promise
     for (const address of unnamedAccounts) {
       if (address) {
         try {
-          const signer = await _getSigner(hre, address);
+          const signer = await getSignerOrNull(hre, address);
           if (signer) {
             unnamedSigners.push(signer); // TODO cache ?
           }
-        } catch(e) {}
+        } catch (e) {}
       }
     }
     return unnamedSigners;
   }
-  throw new Error(
-    `No Deployment Plugin Installed, try 'import "harhdat-deploy"'`
-  );
-}
-
-
-export async function getNamedSignerOrNull(hre: HardhatRuntimeEnvironment, name: string): Promise<SignerWithAddress| null> {
-  const getNamedAccounts = (hre as any).getNamedAccounts;
-  if (getNamedAccounts !== undefined) {
-    const namedAccounts = (await getNamedAccounts()) as any;
-    const address = namedAccounts[name];
-    if (!address) {
-      throw new Error(`no account named ${name}`);
-    }
-    const signer = await _getSigner(hre, address);
-    if (signer) {
-      return signer;
-    }
-    return null;
-  }
-  throw new Error(
-    `No Deployment Plugin Installed, try 'import "harhdat-deploy"'`
-  );
-}
-
-export async function getNamedSigner(hre: HardhatRuntimeEnvironment, name: string): Promise<SignerWithAddress> {
-  const signer = await getNamedSignerOrNull(hre, name);
-  if (!signer) {
-    throw new Error(`no signer for ${name}`)
-  }
-  return signer;
-}
-
-export function getContractFactory(
-  hre: HardhatRuntimeEnvironment,
-  name: string,
-  signerOrOptions?: ethers.Signer | string | FactoryOptions
-): Promise<ethers.ContractFactory>;
-
-export function getContractFactory(
-  hre: HardhatRuntimeEnvironment,
-  abi: any[],
-  bytecode: ethers.utils.BytesLike,
-  signer?: ethers.Signer | string
-): Promise<ethers.ContractFactory>;
-
-export async function getContractFactory(
-  hre: HardhatRuntimeEnvironment,
-  nameOrAbi: string | any[],
-  bytecodeOrFactoryOptions?:
-    | (ethers.Signer | string | FactoryOptions)
-    | ethers.utils.BytesLike,
-  signer?: ethers.Signer | string
-) {
-  if (typeof nameOrAbi === "string") {
-    return getContractFactoryByName(
-      hre,
-      nameOrAbi,
-      bytecodeOrFactoryOptions as ethers.Signer | string | FactoryOptions | undefined
-    );
-  }
-
-  // will fallback on signers[0]
-  // if (!signer) {
-  //   throw new Error("need to specify signer or address");
-  // }
-
-  return getContractFactoryByAbiAndBytecode(
-    hre,
-    nameOrAbi,
-    bytecodeOrFactoryOptions as ethers.utils.BytesLike,
-    signer
-  );
-}
-
-function isFactoryOptions(
-  signerOrOptions?: ethers.Signer | string | FactoryOptions
-): signerOrOptions is FactoryOptions {
-  const { Signer } = require("ethers") as typeof ethers;
-  if (signerOrOptions === undefined || signerOrOptions instanceof Signer) {
-    return false;
-  }
-
-  return true;
-}
-
-async function getContractFactoryByName(
-  hre: HardhatRuntimeEnvironment,
-  contractName: string,
-  signerOrOptions?: ethers.Signer | string | FactoryOptions
-) {
-  const artifact = await _getArtifact(hre, contractName);
-
-  let libraries: Libraries = {};
-  let signer: ethers.Signer | string | undefined;
-  if (isFactoryOptions(signerOrOptions)) {
-    signer = signerOrOptions.signer;
-    libraries = signerOrOptions.libraries ?? {};
-  } else {
-    signer = signerOrOptions;
-  }
-
-  if (artifact.bytecode === "0x") {
-    throw new NomicLabsHardhatPluginError(
-      pluginName,
-      `You are trying to create a contract factory for the contract ${contractName}, which is abstract and can't be deployed.
-If you want to call a contract using ${contractName} as its interface use the "getContractAt" function instead.`
-    );
-  }
-
-  const linkedBytecode = await collectLibrariesAndLink(artifact, libraries);
-
-  return getContractFactoryByAbiAndBytecode(
-    hre,
-    artifact.abi,
-    linkedBytecode,
-    signer
-  );
-}
-
-async function collectLibrariesAndLink(
-  artifact: Artifact,
-  libraries: Libraries
-) {
-  const { utils } = require("ethers") as typeof ethers;
-
-  const neededLibraries: Array<{
-    sourceName: string;
-    libName: string;
-  }> = [];
-  for (const [sourceName, sourceLibraries] of Object.entries(
-    artifact.linkReferences
-  )) {
-    for (const libName of Object.keys(sourceLibraries)) {
-      neededLibraries.push({ sourceName, libName });
-    }
-  }
-
-  const linksToApply: Map<string, Link> = new Map();
-  for (const [linkedLibraryName, linkedLibraryAddress] of Object.entries(
-    libraries
-  )) {
-    if (!utils.isAddress(linkedLibraryAddress)) {
-      throw new NomicLabsHardhatPluginError(
-        pluginName,
-        `You tried to link the contract ${artifact.contractName} with the library ${linkedLibraryName}, but provided this invalid address: ${linkedLibraryAddress}`
-      );
-    }
-
-    const matchingNeededLibraries = neededLibraries.filter((lib) => {
-      return (
-        lib.libName === linkedLibraryName ||
-        `${lib.sourceName}:${lib.libName}` === linkedLibraryName
-      );
-    });
-
-    if (matchingNeededLibraries.length === 0) {
-      let detailedMessage: string;
-      if (neededLibraries.length > 0) {
-        const libraryFQNames = neededLibraries
-          .map((lib) => `${lib.sourceName}:${lib.libName}`)
-          .map((x) => `* ${x}`)
-          .join("\n");
-        detailedMessage = `The libraries needed are:
-${libraryFQNames}`;
-      } else {
-        detailedMessage = "This contract doesn't need linking any libraries.";
-      }
-      throw new NomicLabsHardhatPluginError(
-        pluginName,
-        `You tried to link the contract ${artifact.contractName} with ${linkedLibraryName}, which is not one of its libraries.
-${detailedMessage}`
-      );
-    }
-
-    if (matchingNeededLibraries.length > 1) {
-      const matchingNeededLibrariesFQNs = matchingNeededLibraries
-        .map(({ sourceName, libName }) => `${sourceName}:${libName}`)
-        .map((x) => `* ${x}`)
-        .join("\n");
-      throw new NomicLabsHardhatPluginError(
-        pluginName,
-        `The library name ${linkedLibraryName} is ambiguous for the contract ${artifact.contractName}.
-It may resolve to one of the following libraries:
-${matchingNeededLibrariesFQNs}
-
-To fix this, choose one of these fully qualified library names and replace where appropriate.`
-      );
-    }
-
-    const [neededLibrary] = matchingNeededLibraries;
-
-    const neededLibraryFQN = `${neededLibrary.sourceName}:${neededLibrary.libName}`;
-
-    // The only way for this library to be already mapped is
-    // for it to be given twice in the libraries user input:
-    // once as a library name and another as a fully qualified library name.
-    if (linksToApply.has(neededLibraryFQN)) {
-      throw new NomicLabsHardhatPluginError(
-        pluginName,
-        `The library names ${neededLibrary.libName} and ${neededLibraryFQN} refer to the same library and were given as two separate library links.
-Remove one of them and review your library links before proceeding.`
-      );
-    }
-
-    linksToApply.set(neededLibraryFQN, {
-      sourceName: neededLibrary.sourceName,
-      libraryName: neededLibrary.libName,
-      address: linkedLibraryAddress,
-    });
-  }
-
-  if (linksToApply.size < neededLibraries.length) {
-    const missingLibraries = neededLibraries
-      .map((lib) => `${lib.sourceName}:${lib.libName}`)
-      .filter((libFQName) => !linksToApply.has(libFQName))
-      .map((x) => `* ${x}`)
-      .join("\n");
-
-    throw new NomicLabsHardhatPluginError(
-      pluginName,
-      `The contract ${artifact.contractName} is missing links for the following libraries:
-${missingLibraries}
-
-Learn more about linking contracts at https://hardhat.org/plugins/nomiclabs-hardhat-ethers.html#library-linking
-`
-    );
-  }
-
-  return linkBytecode(artifact, [...linksToApply.values()]);
-}
-
-async function getContractFactoryByAbiAndBytecode(
-  hre: HardhatRuntimeEnvironment,
-  abi: any[],
-  bytecode: ethers.utils.BytesLike,
-  signer?: ethers.Signer | string
-) {
-  const { ContractFactory } = require("ethers") as typeof ethers;
-
-  // will fallback on signers[0]
-  // if (!signer) {
-  //   throw new Error("need to specify signer or address");
-  // }
-  
-  const ethersSigner = await _getSigner(hre, signer);
-
-  const abiWithAddedGas = addGasToAbiMethodsIfNecessary(
-    hre.network.config,
-    abi
-  );
-
-  return new ContractFactory(abiWithAddedGas, bytecode, ethersSigner);
-}
-
-export async function getContractAt(
-  hre: HardhatRuntimeEnvironment,
-  nameOrAbi: string | any[],
-  address: string,
-  signer?: ethers.Signer | string
-) {
-  const { Contract } = require("ethers") as typeof ethers;
-
-  if (typeof nameOrAbi === "string") {
-    const artifact = await hre.artifacts.readArtifact(nameOrAbi);
-    const factory = await getContractFactoryByAbiAndBytecode(
-      hre,
-      artifact.abi,
-      "0x",
-      signer
-    );
-    return factory.attach(address);
-  }
-
-  const ethersSigner = await _getSigner(hre, signer);
-
-  const abiWithAddedGas = addGasToAbiMethodsIfNecessary(
-    hre.network.config,
-    nameOrAbi
-  );
-
-  return new Contract(address, abiWithAddedGas, ethersSigner || hre.ethers.provider);
+  throw new Error(`No Deployment Plugin Installed, try 'import "harhdat-deploy"'`);
 }
 
 export async function getContract(
-  env: HardhatRuntimeEnvironment,
-  contractName: string,
+  hre: HardhatRuntimeEnvironment,
+  name: string,
   signer?: ethers.Signer | string
 ): Promise<ethers.Contract> {
-  const contract = await getContractOrNull(env, contractName, signer);
+  const contract = await getContractOrNull(hre, name, signer);
   if (contract === null) {
-    throw new Error(`No Contract deployed with name ${contractName}`);
+    throw new Error(`No Contract deployed with name: ${name}`);
   }
   return contract;
 }
 
 export async function getContractOrNull(
-  env: HardhatRuntimeEnvironment,
-  contractName: string,
+  hre: HardhatRuntimeEnvironment,
+  name: string,
   signer?: ethers.Signer | string
 ): Promise<ethers.Contract | null> {
-  const deployments = (env as any).deployments;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const deployments = (hre as any).deployments;
   if (deployments !== undefined) {
     const get = deployments.getOrNull;
-    const contract = (await get(contractName)) as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const contract = (await get(name)) as any;
     if (contract === undefined) {
       return null;
     }
-    return getContractAt(
-      env,
-      contract.abi,
-      contract.address,
-      signer
-    );
-  }
-  throw new Error(
-    `No Deployment Plugin Installed, try 'import "harhdat-deploy"'`
-  );
-}
-
-// This helper adds a `gas` field to the ABI function elements if the network
-// is set up to use a fixed amount of gas.
-// This is done so that ethers doesn't automatically estimate gas limits on
-// every call.
-function addGasToAbiMethodsIfNecessary(
-  networkConfig: NetworkConfig,
-  abi: any[]
-): any[] {
-  const { BigNumber } = require("ethers") as typeof ethers;
-
-  if (networkConfig.gas === "auto" || networkConfig.gas === undefined) {
-    return abi;
-  }
-
-  // ethers adds 21000 to whatever the abi `gas` field has. This may lead to
-  // OOG errors, as people may set the default gas to the same value as the
-  // block gas limit, especially on Hardhat Network.
-  // To avoid this, we substract 21000.
-  // HOTFIX: We substract 1M for now. See: https://github.com/ethers-io/ethers.js/issues/1058#issuecomment-703175279
-  const gasLimit = BigNumber.from(networkConfig.gas).sub(1000000).toHexString();
-
-  const modifiedAbi: any[] = [];
-
-  for (const abiElement of abi) {
-    if (abiElement.type !== "function") {
-      modifiedAbi.push(abiElement);
-      continue;
+    if (typeof signer === 'string') {
+      return getContractAtWithSignerAddress(hre, contract.abi, contract.address, signer);
     }
-
-    modifiedAbi.push({
-      ...abiElement,
-      gas: gasLimit,
-    });
+    return hre.ethers.getContractAt(contract.abi, contract.address, signer);
   }
-
-  return modifiedAbi;
-}
-
-function linkBytecode(artifact: Artifact, libraries: Link[]): string {
-  let bytecode = artifact.bytecode;
-
-  // TODO: measure performance impact
-  for (const { sourceName, libraryName, address } of libraries) {
-    const linkReferences = artifact.linkReferences[sourceName][libraryName];
-    for (const { start, length } of linkReferences) {
-      bytecode =
-        bytecode.substr(0, 2 + start * 2) +
-        address.substr(2) +
-        bytecode.substr(2 + (start + length) * 2);
-    }
-  }
-
-  return bytecode;
+  throw new Error(`No Deployment Plugin Installed, try 'import "harhdat-deploy"'`);
 }
