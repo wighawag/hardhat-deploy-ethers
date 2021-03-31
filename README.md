@@ -29,6 +29,9 @@ Or, if you are using TypeScript, add this to your `hardhat.config.ts`:
 import "hardhat-deploy-ethers";
 ```
 
+**Warning:**  
+If you depend on `@nomiclabs/hardhat-ethers` - read this issue with a workaround (here)[https://github.com/wighawag/hardhat-deploy-ethers/issues/1]
+
 ## Tasks
 
 This plugin creates no additional tasks.
