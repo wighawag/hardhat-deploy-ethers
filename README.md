@@ -10,6 +10,12 @@ This plugin add extra features on top @nomiclabs : `@nomiclabs/hardhat-ethers fo
 
 ## Installation
 
+Since `hardhat-deploy-ethers` is a fork of `@nomiclabs/hardhat-ethers` and that other plugin might have an hardcoded dependency on `@nomiclabs/hardhat-etehrs` the best way to install `hardhat-deploy-ethers` and ensure compatibility is the following:
+
+```bash
+npm i -D @nomiclabs/hardhat-ethers@npm:hardhat-deploy-ethers
+```
+
 ```bash
 npm install --save-dev hardhat-deploy-ethers ethers @nomiclabs/hardhat-ethers
 ```

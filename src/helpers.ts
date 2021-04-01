@@ -1,7 +1,16 @@
 import type {ethers} from 'ethers';
-import {HardhatRuntimeEnvironment} from 'hardhat/types';
+import {Artifact, HardhatRuntimeEnvironment} from 'hardhat/types';
 import type {SignerWithAddress} from '@nomiclabs/hardhat-ethers/signers';
 import {FactoryOptionsWithSignerAddress} from './types';
+
+// async function _getArtifact(hre: HardhatRuntimeEnvironment, name: string): Promise<Artifact> {
+//   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+//   const deployments = (hre as any).deployments;
+//   if (deployments !== undefined) {
+//     return deployments.getArtifact(name);
+//   }
+//   return hre.artifacts.readArtifact(name);
+// }
 
 export function getContractFactoryWithSignerAddress(
   hre: HardhatRuntimeEnvironment,
