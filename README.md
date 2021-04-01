@@ -13,11 +13,20 @@ And add extra functionality and the ability to get signer from address string
 
 ## Installation
 
+Since `hardhat-deploy-ethers` is a fork of `@nomiclabs/hardhat-ethers` and that other plugin might have an hardcoded dependency on `@nomiclabs/hardhat-etehrs` the best way to install `hardhat-deploy-ethers` and ensure compatibility is the following:
+
+```bash
+npm install --save-dev  @nomiclabs/hardhat-ethers@npm:hardhat-deploy-ethers ethers
+```
+
+
+If you are sure that no other plugins need `@nomiclabs/hardhat-etehrs` to be installed you can do :
+
 ```bash
 npm install --save-dev hardhat-deploy-ethers ethers
 ```
 
-And add the following statement to your `hardhat.config.js`:
+Then add the following statement to your `hardhat.config.js`:
 
 ```js
 require("hardhat-deploy-ethers");
