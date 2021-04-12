@@ -19,11 +19,22 @@ Since `hardhat-deploy-ethers` is a fork of `@nomiclabs/hardhat-ethers` and that 
 npm install --save-dev  @nomiclabs/hardhat-ethers@npm:hardhat-deploy-ethers ethers
 ```
 
-Which means you then need to do `require("@nomiclabs/hardhat-ethers")` instead of `require("hardhat-deploy-ethers")` in your `hardhat.config.js` file.
+Which means you then add the following statement to your `hardhat.config.js`:
+
+```js
+require("@nomiclabs/hardhat-ethers");
+``` 
+
+Or, if you are using TypeScript, add this to your `hardhat.config.ts`:
+
+```ts
+import "@nomiclabs/hardhat-ethers";
+```
 
 Note that in the future, `hardhat-deploy-ethers` will be an extension of `@nomiclabs/hardhat-etehrs` but this is not currently possible without losing features.
 
-If you are sure that no other plugins need `@nomiclabs/hardhat-etehrs` to be installed you can do :
+
+Note that if you are sure that no other plugins need `@nomiclabs/hardhat-etehrs` to be installed you can do :
 
 ```bash
 npm install --save-dev hardhat-deploy-ethers ethers
