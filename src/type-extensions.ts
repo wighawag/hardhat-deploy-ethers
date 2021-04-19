@@ -28,11 +28,11 @@ declare module "hardhat/types/runtime" {
       provider: ethers.providers.JsonRpcProvider;
 
       getContractFactory: typeof getContractFactory;
-      getContractAt: (
+      getContractAt: <T extends ethers.Contract>(
         nameOrAbi: string | any[],
         address: string,
         signer?: ethers.Signer | string
-      ) => Promise<ethers.Contract>;
+      ) => Promise<T>;
       getSigners: () => Promise<SignerWithAddress[]>;
       getSigner: (address: string) => Promise<SignerWithAddress>;
       getSignerOrNull: (address: string) => Promise<SignerWithAddress | null>;
@@ -41,14 +41,14 @@ declare module "hardhat/types/runtime" {
       getNamedSignerOrNull: (name: string) => Promise<SignerWithAddress | null>;
       getUnnamedSigners: () => Promise<SignerWithAddress[]>;
 
-      getContract: (
+      getContract: <T extends ethers.Contract>(
         name: string,
         signer?: ethers.Signer | string
-      ) => Promise<ethers.Contract>;
-      getContractOrNull: (
+      ) => Promise<T>;
+      getContractOrNull: <T extends ethers.Contract>(
         name: string,
         signer?: ethers.Signer | string
-      ) => Promise<ethers.Contract | null>;
+      ) => Promise<T | null>;
       // Standard ethers properties
       Signer: typeof ethers.Signer;
       Wallet: typeof ethers.Wallet;

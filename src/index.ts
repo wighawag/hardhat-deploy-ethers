@@ -26,7 +26,11 @@ extendEnvironment((hre) => {
       // We cast to any here as we hit a limitation of Function#bind and
       // overloads. See: https://github.com/microsoft/TypeScript/issues/28582
       getContractFactory: getContractFactory.bind(null, hre) as any,
-      getContractAt: getContractAt.bind(null, hre),
+      getContractAt: async <T extends EthersT.Contract>(
+        nameOrAbi: string | any[],
+        address: string,
+        signer?: EthersT.Signer | string
+      )=> getContractAt<T>(hre, nameOrAbi, address, signer),
       
       getSigners: async () => getSigners(hre),
       getSigner: async(address) => getSigner(hre, address),
@@ -38,14 +42,14 @@ extendEnvironment((hre) => {
       getUnnamedSigners: async () => getUnnamedSigners(hre),
   
 
-      getContract: async (
-        name,
-        signer
-      ) => getContract(hre, name, signer),
-      getContractOrNull: async (
-        name,
-        signer
-      ) => getContractOrNull(hre, name, signer),
+      getContract: async <T extends EthersT.Contract>(
+        name: string,
+        signer?: EthersT.Signer | string
+      ) => getContract<T>(hre, name, signer),
+      getContractOrNull: async <T extends EthersT.Contract>(
+        name: string,
+        signer?: EthersT.Signer | string
+      ) => getContractOrNull<T>(hre, name, signer),
     };
   });
 });
