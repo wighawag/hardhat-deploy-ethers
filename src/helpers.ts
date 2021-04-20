@@ -398,12 +398,12 @@ async function getContractFactoryByAbiAndBytecode(
   return new ContractFactory(abiWithAddedGas, bytecode, ethersSigner);
 }
 
-export async function getContractAt(
+export async function getContractAt<T extends ethers.Contract>(
   hre: HardhatRuntimeEnvironment,
   nameOrAbi: string | any[],
   address: string,
   signer?: ethers.Signer | string
-) {
+): Promise<T> {
   const { Contract } = require("ethers") as typeof ethers;
 
   if (typeof nameOrAbi === "string") {
@@ -414,7 +414,7 @@ export async function getContractAt(
       "0x",
       signer
     );
-    return factory.attach(address);
+    return factory.attach(address) as T;
   }
 
   const ethersSigner = await _getSigner(hre, signer);
@@ -424,26 +424,26 @@ export async function getContractAt(
     nameOrAbi
   );
 
-  return new Contract(address, abiWithAddedGas, ethersSigner || hre.ethers.provider);
+  return new Contract(address, abiWithAddedGas, ethersSigner || hre.ethers.provider) as T;
 }
 
-export async function getContract(
+export async function getContract<T extends ethers.Contract>(
   env: HardhatRuntimeEnvironment,
   contractName: string,
   signer?: ethers.Signer | string
-): Promise<ethers.Contract> {
-  const contract = await getContractOrNull(env, contractName, signer);
+): Promise<T> {
+  const contract = await getContractOrNull<T>(env, contractName, signer);
   if (contract === null) {
     throw new Error(`No Contract deployed with name ${contractName}`);
   }
   return contract;
 }
 
-export async function getContractOrNull(
+export async function getContractOrNull<T extends ethers.Contract>(
   env: HardhatRuntimeEnvironment,
   contractName: string,
   signer?: ethers.Signer | string
-): Promise<ethers.Contract | null> {
+): Promise<T | null> {
   const deployments = (env as any).deployments;
   if (deployments !== undefined) {
     const get = deployments.getOrNull;
@@ -451,7 +451,7 @@ export async function getContractOrNull(
     if (contract === undefined) {
       return null;
     }
-    return getContractAt(
+    return getContractAt<T>(
       env,
       contract.abi,
       contract.address,
