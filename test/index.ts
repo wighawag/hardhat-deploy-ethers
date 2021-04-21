@@ -37,9 +37,13 @@ describe("Ethers plugin", function () {
       let greeterArtifact: Artifact;
       let iGreeterArtifact: Artifact;
 
+      before(async function () {
+        await this.env.run("typechain");
+      });
+
       beforeEach(async function () {
         signers = await this.env.ethers.getSigners();
-        await this.env.run("compile", { quiet: true });
+        await this.env.run("compile", { quiet: true, noTypechain: true });
         greeterArtifact = await this.env.artifacts.readArtifact("Greeter");
 
         iGreeterArtifact = await this.env.artifacts.readArtifact("IGreeter");
