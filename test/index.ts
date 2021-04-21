@@ -2,6 +2,7 @@ import { assert } from "chai";
 import { ethers } from "ethers";
 import { NomicLabsHardhatPluginError } from "hardhat/plugins";
 import { Artifact } from "hardhat/types";
+import { Greeter, Greeter__factory, TestAmbiguousLib__factory, TestContractLib, TestContractLib__factory, TestNonUniqueLib__factory } from "./fixture-projects/hardhat-project/typechain";
 
 import { useEnvironment } from "./helpers";
 
@@ -36,9 +37,13 @@ describe("Ethers plugin", function () {
       let greeterArtifact: Artifact;
       let iGreeterArtifact: Artifact;
 
+      before(async function () {
+        await this.env.run("typechain");
+      });
+
       beforeEach(async function () {
         signers = await this.env.ethers.getSigners();
-        await this.env.run("compile", { quiet: true });
+        await this.env.run("compile", { quiet: true, noTypechain: true });
         greeterArtifact = await this.env.artifacts.readArtifact("Greeter");
 
         iGreeterArtifact = await this.env.artifacts.readArtifact("IGreeter");
@@ -77,7 +82,7 @@ describe("Ethers plugin", function () {
         it("should throw when sign a transaction", async function () {
           const [sig] = await this.env.ethers.getSigners();
 
-          const Greeter = await this.env.ethers.getContractFactory("Greeter");
+          const Greeter = await this.env.ethers.getContractFactory<Greeter__factory>("Greeter");
           const tx = Greeter.getDeployTransaction();
 
           assert.throws(() => sig.signTransaction(tx));
@@ -99,7 +104,7 @@ describe("Ethers plugin", function () {
         it("should allow to use the estimateGas method", async function () {
           const [sig] = await this.env.ethers.getSigners();
 
-          const Greeter = await this.env.ethers.getContractFactory("Greeter");
+          const Greeter = await this.env.ethers.getContractFactory<Greeter__factory>("Greeter");
           const tx = Greeter.getDeployTransaction();
 
           const result = await sig.estimateGas(tx);
@@ -110,7 +115,7 @@ describe("Ethers plugin", function () {
         it("should allow to use the call method", async function () {
           const [sig] = await this.env.ethers.getSigners();
 
-          const Greeter = await this.env.ethers.getContractFactory("Greeter");
+          const Greeter = await this.env.ethers.getContractFactory<Greeter__factory>("Greeter");
           const tx = Greeter.getDeployTransaction();
 
           const result = await sig.call(tx);
@@ -121,7 +126,7 @@ describe("Ethers plugin", function () {
         it("should send a transaction", async function () {
           const [sig] = await this.env.ethers.getSigners();
 
-          const Greeter = await this.env.ethers.getContractFactory("Greeter");
+          const Greeter = await this.env.ethers.getContractFactory<Greeter__factory>("Greeter");
           const tx = Greeter.getDeployTransaction();
 
           const response = await sig.sendTransaction(tx);
@@ -150,7 +155,7 @@ describe("Ethers plugin", function () {
         it("should check and populate a transaction", async function () {
           const [sig] = await this.env.ethers.getSigners();
 
-          const Greeter = await this.env.ethers.getContractFactory("Greeter");
+          const Greeter = await this.env.ethers.getContractFactory<Greeter__factory>("Greeter");
           const tx = Greeter.getDeployTransaction();
 
           const checkedTransaction = sig.checkTransaction(tx);
@@ -169,7 +174,7 @@ describe("Ethers plugin", function () {
         describe("By name", function () {
           it("should return a contract factory", async function () {
             // It's already compiled in artifacts/
-            const contract = await this.env.ethers.getContractFactory(
+            const contract = await this.env.ethers.getContractFactory<Greeter__factory>(
               "Greeter"
             );
 
@@ -212,7 +217,7 @@ describe("Ethers plugin", function () {
             );
             const library = await libraryFactory.deploy();
 
-            const contractFactory = await this.env.ethers.getContractFactory(
+            const contractFactory = await this.env.ethers.getContractFactory<TestContractLib__factory>(
               "TestContractLib",
               { libraries: { TestLibrary: library.address } }
             );
@@ -223,7 +228,7 @@ describe("Ethers plugin", function () {
             const numberPrinter = await contractFactory.deploy();
             const someNumber = 50;
             assert.equal(
-              await numberPrinter.callStatic.printNumber(someNumber),
+              (await numberPrinter.callStatic.printNumber(someNumber)).toNumber(),
               someNumber * 2
             );
           });
@@ -235,7 +240,7 @@ describe("Ethers plugin", function () {
             const library = await libraryFactory.deploy();
 
             try {
-              await this.env.ethers.getContractFactory("TestContractLib", {
+              await this.env.ethers.getContractFactory<TestContractLib__factory>("TestContractLib", {
                 libraries: {
                   TestLibrary: library.address,
                   "contracts/TestContractLib.sol:TestLibrary": library.address,
@@ -274,7 +279,7 @@ describe("Ethers plugin", function () {
             );
             const library = await libraryFactory.deploy();
 
-            const contractFactory = await this.env.ethers.getContractFactory(
+            const contractFactory = await this.env.ethers.getContractFactory<TestNonUniqueLib__factory>(
               "TestNonUniqueLib",
               { libraries: { NonUniqueLibrary: library.address } }
             );
@@ -295,7 +300,7 @@ describe("Ethers plugin", function () {
             const library2 = await libraryFactory.deploy();
 
             try {
-              await this.env.ethers.getContractFactory("TestAmbiguousLib", {
+              await this.env.ethers.getContractFactory<TestAmbiguousLib__factory>("TestAmbiguousLib", {
                 libraries: {
                   AmbiguousLibrary: library.address,
                   "contracts/AmbiguousLibrary2.sol:AmbiguousLibrary":
@@ -361,7 +366,7 @@ describe("Ethers plugin", function () {
           it("should fail to create a contract factory with an invalid address", async function () {
             const notAnAddress = "definitely not an address";
             try {
-              await this.env.ethers.getContractFactory("TestContractLib", {
+              await this.env.ethers.getContractFactory<TestContractLib__factory>("TestContractLib", {
                 libraries: { TestLibrary: notAnAddress },
               });
             } catch (reason) {
@@ -394,7 +399,7 @@ describe("Ethers plugin", function () {
             const library = await libraryFactory.deploy();
 
             try {
-              const contractFactory = await this.env.ethers.getContractFactory(
+              const contractFactory = await this.env.ethers.getContractFactory<TestContractLib__factory>(
                 "TestContractLib",
                 { libraries: { TestLibrary: library as any } }
               );
@@ -425,18 +430,18 @@ describe("Ethers plugin", function () {
           });
 
           it("Should be able to send txs and make calls", async function () {
-            const Greeter = await this.env.ethers.getContractFactory("Greeter");
+            const Greeter = await this.env.ethers.getContractFactory<Greeter__factory>("Greeter");
             const greeter = await Greeter.deploy();
 
-            assert.equal(await greeter.functions.greet(), "Hi");
-            await greeter.functions.setGreeting("Hola");
-            assert.equal(await greeter.functions.greet(), "Hola");
+            assert.equal(await greeter.greet(), "Hi");
+            await greeter.setGreeting("Hola");
+            assert.equal(await greeter.greet(), "Hola");
           });
 
           describe("with custom signer", function () {
             it("should return a contract factory connected to the custom signer", async function () {
               // It's already compiled in artifacts/
-              const contract = await this.env.ethers.getContractFactory(
+              const contract = await this.env.ethers.getContractFactory<Greeter__factory>(
                 "Greeter",
                 signers[1]
               );
@@ -457,7 +462,7 @@ describe("Ethers plugin", function () {
         describe("by abi and bytecode", function () {
           it("should return a contract factory", async function () {
             // It's already compiled in artifacts/
-            const contract = await this.env.ethers.getContractFactory(
+            const contract = await this.env.ethers.getContractFactory<Greeter__factory>(
               greeterArtifact.abi,
               greeterArtifact.bytecode
             );
@@ -474,7 +479,7 @@ describe("Ethers plugin", function () {
           });
 
           it("should return a contract factory for an interface", async function () {
-            const contract = await this.env.ethers.getContractFactory(
+            const contract = await this.env.ethers.getContractFactory<Greeter__factory>(
               iGreeterArtifact.abi,
               iGreeterArtifact.bytecode
             );
@@ -488,21 +493,21 @@ describe("Ethers plugin", function () {
           });
 
           it("Should be able to send txs and make calls", async function () {
-            const Greeter = await this.env.ethers.getContractFactory(
+            const Greeter = await this.env.ethers.getContractFactory<Greeter__factory>(
               greeterArtifact.abi,
               greeterArtifact.bytecode
             );
             const greeter = await Greeter.deploy();
 
-            assert.equal(await greeter.functions.greet(), "Hi");
-            await greeter.functions.setGreeting("Hola");
-            assert.equal(await greeter.functions.greet(), "Hola");
+            assert.equal(await greeter.greet(), "Hi");
+            await greeter.setGreeting("Hola");
+            assert.equal(await greeter.greet(), "Hola");
           });
 
           describe("with custom signer", function () {
             it("should return a contract factory connected to the custom signer", async function () {
               // It's already compiled in artifacts/
-              const contract = await this.env.ethers.getContractFactory(
+              const contract = await this.env.ethers.getContractFactory<Greeter__factory>(
                 greeterArtifact.abi,
                 greeterArtifact.bytecode,
                 signers[1]
@@ -526,13 +531,13 @@ describe("Ethers plugin", function () {
         let deployedGreeter: ethers.Contract;
 
         beforeEach(async function () {
-          const Greeter = await this.env.ethers.getContractFactory("Greeter");
+          const Greeter = await this.env.ethers.getContractFactory<Greeter__factory>("Greeter");
           deployedGreeter = await Greeter.deploy();
         });
 
         describe("by name and address", function () {
           it("Should return an instance of a contract", async function () {
-            const contract = await this.env.ethers.getContractAt(
+            const contract = await this.env.ethers.getContractAt<Greeter>(
               "Greeter",
               deployedGreeter.address
             );
@@ -549,7 +554,7 @@ describe("Ethers plugin", function () {
           });
 
           it("Should return an instance of an interface", async function () {
-            const contract = await this.env.ethers.getContractAt(
+            const contract = await this.env.ethers.getContractAt<Greeter>(
               "IGreeter",
               deployedGreeter.address
             );
@@ -563,19 +568,19 @@ describe("Ethers plugin", function () {
           });
 
           it("Should be able to send txs and make calls", async function () {
-            const greeter = await this.env.ethers.getContractAt(
+            const greeter = await this.env.ethers.getContractAt<Greeter>(
               "Greeter",
               deployedGreeter.address
             );
 
-            assert.equal(await greeter.functions.greet(), "Hi");
-            await greeter.functions.setGreeting("Hola");
-            assert.equal(await greeter.functions.greet(), "Hola");
+            assert.equal(await greeter.greet(), "Hi");
+            await greeter.setGreeting("Hola");
+            assert.equal(await greeter.greet(), "Hola");
           });
 
           describe("with custom signer", function () {
             it("Should return an instance of a contract associated to a custom signer", async function () {
-              const contract = await this.env.ethers.getContractAt(
+              const contract = await this.env.ethers.getContractAt<Greeter>(
                 "Greeter",
                 deployedGreeter.address,
                 signers[1]
@@ -591,7 +596,7 @@ describe("Ethers plugin", function () {
 
         describe("by abi and address", function () {
           it("Should return an instance of a contract", async function () {
-            const contract = await this.env.ethers.getContractAt(
+            const contract = await this.env.ethers.getContractAt<Greeter>(
               greeterArtifact.abi,
               deployedGreeter.address
             );
@@ -608,7 +613,7 @@ describe("Ethers plugin", function () {
           });
 
           it("Should return an instance of an interface", async function () {
-            const contract = await this.env.ethers.getContractAt(
+            const contract = await this.env.ethers.getContractAt<Greeter>(
               iGreeterArtifact.abi,
               deployedGreeter.address
             );
@@ -622,19 +627,19 @@ describe("Ethers plugin", function () {
           });
 
           it("Should be able to send txs and make calls", async function () {
-            const greeter = await this.env.ethers.getContractAt(
+            const greeter = await this.env.ethers.getContractAt<Greeter>(
               greeterArtifact.abi,
               deployedGreeter.address
             );
 
-            assert.equal(await greeter.functions.greet(), "Hi");
-            await greeter.functions.setGreeting("Hola");
-            assert.equal(await greeter.functions.greet(), "Hola");
+            assert.equal(await greeter.greet(), "Hi");
+            await greeter.setGreeting("Hola");
+            assert.equal(await greeter.greet(), "Hola");
           });
 
           describe("with custom signer", function () {
             it("Should return an instance of a contract associated to a custom signer", async function () {
-              const contract = await this.env.ethers.getContractAt(
+              const contract = await this.env.ethers.getContractAt<Greeter>(
                 greeterArtifact.abi,
                 deployedGreeter.address,
                 signers[1]
@@ -653,20 +658,20 @@ describe("Ethers plugin", function () {
             );
             const library = await libraryFactory.deploy();
 
-            const contractFactory = await this.env.ethers.getContractFactory(
+            const contractFactory = await this.env.ethers.getContractFactory<TestContractLib__factory>(
               "TestContractLib",
               { libraries: { TestLibrary: library.address } }
             );
             const numberPrinter = await contractFactory.deploy();
 
-            const numberPrinterAtAddress = await this.env.ethers.getContractAt(
+            const numberPrinterAtAddress = await this.env.ethers.getContractAt<TestContractLib>(
               "TestContractLib",
               numberPrinter.address
             );
 
             const someNumber = 50;
             assert.equal(
-              await numberPrinterAtAddress.callStatic.printNumber(someNumber),
+              (await numberPrinterAtAddress.callStatic.printNumber(someNumber)).toNumber(),
               someNumber * 2
             );
           });
@@ -756,7 +761,7 @@ describe("Ethers plugin", function () {
     it("should return the correct code after a hardhat_reset", async function () {
       const [sig] = await this.env.ethers.getSigners();
 
-      const Greeter = await this.env.ethers.getContractFactory("Greeter");
+      const Greeter = await this.env.ethers.getContractFactory<Greeter__factory>("Greeter");
       const tx = Greeter.getDeployTransaction();
 
       const response = await sig.sendTransaction(tx);

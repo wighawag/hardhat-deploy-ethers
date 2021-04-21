@@ -13,15 +13,15 @@ declare module "hardhat/types/runtime" {
   type Libraries = LibrariesT;
   type FactoryOptions = FactoryOptionsT;
 
-  function getContractFactory(
+  function getContractFactory<T extends ethers.ContractFactory>(
     name: string,
     signerOrOptions?: ethers.Signer | string | FactoryOptions
-  ): Promise<ethers.ContractFactory>;
-  function getContractFactory(
+  ): Promise<T>;
+  function getContractFactory<T extends ethers.ContractFactory>(
     abi: any[],
     bytecode: ethers.utils.BytesLike,
     signer?: ethers.Signer | string
-  ): Promise<ethers.ContractFactory>;
+  ): Promise<T>;
 
   interface HardhatRuntimeEnvironment {
     ethers: {
