@@ -176,29 +176,29 @@ export async function getNamedSigner(hre: HardhatRuntimeEnvironment, name: strin
   return signer;
 }
 
-export function getContractFactory(
+export function getContractFactory<T extends ethers.ContractFactory>(
   hre: HardhatRuntimeEnvironment,
   name: string,
   signerOrOptions?: ethers.Signer | string | FactoryOptions
-): Promise<ethers.ContractFactory>;
+): Promise<T>;
 
-export function getContractFactory(
+export function getContractFactory<T extends ethers.ContractFactory>(
   hre: HardhatRuntimeEnvironment,
   abi: any[],
   bytecode: ethers.utils.BytesLike,
   signer?: ethers.Signer | string
-): Promise<ethers.ContractFactory>;
+): Promise<T>;
 
-export async function getContractFactory(
+export async function getContractFactory<T extends ethers.ContractFactory>(
   hre: HardhatRuntimeEnvironment,
   nameOrAbi: string | any[],
   bytecodeOrFactoryOptions?:
     | (ethers.Signer | string | FactoryOptions)
     | ethers.utils.BytesLike,
   signer?: ethers.Signer | string
-) {
+): Promise<T> {
   if (typeof nameOrAbi === "string") {
-    return getContractFactoryByName(
+    return getContractFactoryByName<T>(
       hre,
       nameOrAbi,
       bytecodeOrFactoryOptions as ethers.Signer | string | FactoryOptions | undefined
@@ -210,7 +210,7 @@ export async function getContractFactory(
   //   throw new Error("need to specify signer or address");
   // }
 
-  return getContractFactoryByAbiAndBytecode(
+  return getContractFactoryByAbiAndBytecode<T>(
     hre,
     nameOrAbi,
     bytecodeOrFactoryOptions as ethers.utils.BytesLike,
@@ -229,11 +229,11 @@ function isFactoryOptions(
   return true;
 }
 
-async function getContractFactoryByName(
+async function getContractFactoryByName<T extends ethers.ContractFactory>(
   hre: HardhatRuntimeEnvironment,
   contractName: string,
   signerOrOptions?: ethers.Signer | string | FactoryOptions
-) {
+): Promise<T> {
   const artifact = await _getArtifact(hre, contractName);
 
   let libraries: Libraries = {};
@@ -375,12 +375,12 @@ Learn more about linking contracts at https://hardhat.org/plugins/nomiclabs-hard
   return linkBytecode(artifact, [...linksToApply.values()]);
 }
 
-async function getContractFactoryByAbiAndBytecode(
+async function getContractFactoryByAbiAndBytecode<T extends ethers.ContractFactory>(
   hre: HardhatRuntimeEnvironment,
   abi: any[],
   bytecode: ethers.utils.BytesLike,
   signer?: ethers.Signer | string
-) {
+): Promise<T> {
   const { ContractFactory } = require("ethers") as typeof ethers;
 
   // will fallback on signers[0]
@@ -395,7 +395,7 @@ async function getContractFactoryByAbiAndBytecode(
     abi
   );
 
-  return new ContractFactory(abiWithAddedGas, bytecode, ethersSigner);
+  return new ContractFactory(abiWithAddedGas, bytecode, ethersSigner) as T;
 }
 
 export async function getContractAt<T extends ethers.Contract>(
