@@ -1,5 +1,11 @@
 # hardhat-deploy-ethers
 
+## 0.3.0-beta.8
+
+### Patch Changes
+
+- typing on getContract etc..
+
 ## 0.3.0-beta.7
 
 ### Patch Changes
