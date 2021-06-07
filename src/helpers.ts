@@ -6,7 +6,7 @@ import {
   NetworkConfig,
 } from "hardhat/types";
 
-import type { SignerWithAddress } from "./signer-with-address";
+import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 interface Link {
   sourceName: string;
@@ -27,23 +27,17 @@ const pluginName = "hardhat-deploy-ethers";
 
 async function _getSigner(
   hre: HardhatRuntimeEnvironment,
-  signer: ethers.Signer | string | undefined
-): Promise<SignerWithAddress | undefined> {
+  address: string
+): Promise<SignerWithAddress> {
   const { SignerWithAddress: SignerWithAddressImpl } = await import(
-    "./signer-with-address"
+    "@nomiclabs/hardhat-ethers/signers"
   );
-  let ethersSigner: SignerWithAddress | undefined;
-  if (signer === undefined) {
-    const signers = await hre.ethers.getSigners();
-    if (signers.length > 0) {
-      ethersSigner = signers[0];
-    }
-  } else if (typeof signer === "string") {
-    ethersSigner = await SignerWithAddressImpl.create(hre.ethers.provider.getSigner(signer));
-  } else {
-    ethersSigner =await SignerWithAddressImpl.create(signer)
-  }
-  return ethersSigner;
+
+  const signer = hre.ethers.provider.getSigner(address);
+
+  const signerWithAddress = await SignerWithAddressImpl.create(signer);
+
+  return signerWithAddress;
 }
 
 async function _getArtifact(
@@ -88,7 +82,7 @@ export async function getSigners(
   hre: HardhatRuntimeEnvironment
 ): Promise<SignerWithAddress[]> {
   const { SignerWithAddress: SignerWithAddressImpl } = await import(
-    "./signer-with-address"
+    "@nomiclabs/hardhat-ethers/signers"
   );
 
   const accounts = await hre.ethers.provider.listAccounts();
@@ -388,14 +382,20 @@ async function getContractFactoryByAbiAndBytecode<T extends ethers.ContractFacto
   //   throw new Error("need to specify signer or address");
   // }
   
-  const ethersSigner = await _getSigner(hre, signer);
+  // Explicit defaults like in `@nomiclabs/hardhat-ethers`
+  if (typeof signer === "string") {
+    signer = await _getSigner(hre, signer);
+  } else if (signer === undefined) {
+    const signers = await hre.ethers.getSigners();
+    signer = signers[0];
+  }
 
   const abiWithAddedGas = addGasToAbiMethodsIfNecessary(
     hre.network.config,
     abi
   );
 
-  return new ContractFactory(abiWithAddedGas, bytecode, ethersSigner) as T;
+  return new ContractFactory(abiWithAddedGas, bytecode, signer) as T;
 }
 
 export async function getContractAt<T extends ethers.Contract>(
@@ -417,14 +417,20 @@ export async function getContractAt<T extends ethers.Contract>(
     return factory.attach(address) as T;
   }
 
-  const ethersSigner = await _getSigner(hre, signer);
+  // Explicit defaults like in `@nomiclabs/hardhat-ethers`
+  if (typeof signer === "string") {
+    signer = await _getSigner(hre, signer);
+  } else if (signer === undefined) {
+    const signers = await hre.ethers.getSigners();
+    signer = signers[0];
+  }
 
   const abiWithAddedGas = addGasToAbiMethodsIfNecessary(
     hre.network.config,
     nameOrAbi
   );
 
-  return new Contract(address, abiWithAddedGas, ethersSigner || hre.ethers.provider) as T;
+  return new Contract(address, abiWithAddedGas, signer || hre.ethers.provider) as T;
 }
 
 export async function getContract<T extends ethers.Contract>(
