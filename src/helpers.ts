@@ -6,7 +6,7 @@ import {
   NetworkConfig,
 } from "hardhat/types";
 
-import type { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import type { SignerWithAddress } from "@alias/hardhat-ethers/signers";
 
 interface Link {
   sourceName: string;
@@ -30,7 +30,7 @@ async function _getSigner(
   address: string
 ): Promise<SignerWithAddress> {
   const { SignerWithAddress: SignerWithAddressImpl } = await import(
-    "@nomiclabs/hardhat-ethers/signers"
+    "@alias/hardhat-ethers/signers"
   );
 
   const signer = hre.ethers.provider.getSigner(address);
@@ -82,7 +82,7 @@ export async function getSigners(
   hre: HardhatRuntimeEnvironment
 ): Promise<SignerWithAddress[]> {
   const { SignerWithAddress: SignerWithAddressImpl } = await import(
-    "@nomiclabs/hardhat-ethers/signers"
+    "@alias/hardhat-ethers/signers"
   );
 
   const accounts = await hre.ethers.provider.listAccounts();
