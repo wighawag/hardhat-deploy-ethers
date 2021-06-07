@@ -4,8 +4,8 @@ import "hardhat/types/runtime";
 import type {
   FactoryOptions as FactoryOptionsT,
   Libraries as LibrariesT,
-} from "./helpers";
-import type { SignerWithAddress } from "@alias/hardhat-ethers/signers";
+} from "./types";
+import type { SignerWithAddress } from "./signers";
 
 declare module "hardhat/types/runtime" {
   // Beware, adding new types to any hardhat type submodule is not a good practice in a Hardhat plugin.
