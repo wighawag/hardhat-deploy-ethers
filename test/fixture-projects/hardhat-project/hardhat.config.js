@@ -1,4 +1,4 @@
-require("../../../src/index");
+require("../../../src/internal/index");
 require("@typechain/hardhat");
 
 module.exports = {
