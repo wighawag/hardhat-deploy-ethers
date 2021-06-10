@@ -6,8 +6,8 @@ import {
   NetworkConfig,
 } from "hardhat/types";
 
-import type { SignerWithAddress } from "./signers";
-import type { FactoryOptions, Libraries } from "./types";
+import type { SignerWithAddress } from "../signers";
+import type { FactoryOptions, Libraries } from "../types";
 
 interface Link {
   sourceName: string;
@@ -22,7 +22,7 @@ async function _getSigner(
   account: string
 ): Promise<SignerWithAddress> {
   const { SignerWithAddress: SignerWithAddressImpl } = await import(
-    "./signers"
+    "../signers"
   );
   const ethersSigner = await SignerWithAddressImpl.create(hre.ethers.provider.getSigner(account));
   return ethersSigner;
@@ -36,7 +36,7 @@ async function _getSignerFromAccountList(
   const found = accounts.find((v) => v.toLowerCase() === account);
   if (found) {
     const { SignerWithAddress: SignerWithAddressImpl } = await import(
-      "./signers"
+      "../signers"
     );
     const ethersSigner = await SignerWithAddressImpl.create(hre.ethers.provider.getSigner(account));
     return ethersSigner;

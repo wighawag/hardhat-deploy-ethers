@@ -6,7 +6,7 @@ import type {
   getContractFactory as getContractFactoryT,
   HardhatEthersHelpers,
   Libraries as LibrariesT,
-} from "./types";
+} from "../types";
 
 declare module "hardhat/types/runtime" {
   interface HardhatRuntimeEnvironment {
