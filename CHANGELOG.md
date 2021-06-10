@@ -1,5 +1,11 @@
 # hardhat-deploy-ethers
 
+## 0.3.0-beta.10
+
+### Patch Changes
+
+- remove unecessary file
+
 ## 0.3.0-beta.9
 
 ### Patch Changes
