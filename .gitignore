@@ -6,6 +6,7 @@
 /dist
 
 artifacts/
+!test/fixture-projects/hardhat-project-with-hardhat-deploy/external/artifacts/
 cache/
 
 # Code coverage artifacts

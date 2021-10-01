@@ -398,7 +398,7 @@ export async function getContractAt<T extends ethers.Contract>(
   const { Contract } = require("ethers") as typeof ethers;
 
   if (typeof nameOrAbi === "string") {
-    const artifact = await hre.artifacts.readArtifact(nameOrAbi);
+    const artifact = await _getArtifact(hre, nameOrAbi);
     const factory = await getContractFactoryByAbiAndBytecode(
       hre,
       artifact.abi,
