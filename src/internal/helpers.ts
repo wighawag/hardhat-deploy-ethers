@@ -244,6 +244,7 @@ If you want to call a contract using ${contractName} as its interface use the "g
     );
   }
 
+  if (!artifact.linkReferences) artifact.linkReferences = {};
   const linkedBytecode = await collectLibrariesAndLink(artifact, libraries);
 
   return getContractFactoryByAbiAndBytecode(
