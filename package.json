@@ -60,7 +60,7 @@
     "prepare": "cd test/fixture-projects/hardhat-project/ && ts-node run-typechain.js && rimraf typechain/hardhat.d.ts",
     "lint:fix": "prettier --write src/**/*.{js,ts} test/**/*.{js,ts} && yarn lint --fix",
     "lint": "tslint --config tslint.json --project tsconfig.json",
-    "test": "mocha --recursive \"test/index.ts\" --exit",
+    "test": "mocha --recursive \"test/{index,with-hardhat-deploy}.ts\" --exit",
     "build": "tsc",
     "clean": "rimraf dist"
   }
