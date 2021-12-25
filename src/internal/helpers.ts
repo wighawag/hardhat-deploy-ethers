@@ -244,7 +244,6 @@ If you want to call a contract using ${contractName} as its interface use the "g
     );
   }
 
-  if (!artifact.linkReferences) artifact.linkReferences = {};
   const linkedBytecode = await collectLibrariesAndLink(artifact, libraries);
 
   return getContractFactoryByAbiAndBytecode(
@@ -265,13 +264,16 @@ async function collectLibrariesAndLink(
     sourceName: string;
     libName: string;
   }> = [];
-  for (const [sourceName, sourceLibraries] of Object.entries(
-    artifact.linkReferences
-  )) {
-    for (const libName of Object.keys(sourceLibraries)) {
-      neededLibraries.push({ sourceName, libName });
+  if (artifact.linkReferences) {
+    for (const [sourceName, sourceLibraries] of Object.entries(
+      artifact.linkReferences
+    )) {
+      for (const libName of Object.keys(sourceLibraries)) {
+        neededLibraries.push({ sourceName, libName });
+      }
     }
   }
+  
 
   const linksToApply: Map<string, Link> = new Map();
   for (const [linkedLibraryName, linkedLibraryAddress] of Object.entries(
