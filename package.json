@@ -1,6 +1,6 @@
 {
   "name": "hardhat-deploy-ethers",
-  "version": "0.3.0-beta.11",
+  "version": "0.3.0-beta.12",
   "description": "Hardhat plugin for ethers that plays well with hardhat-deploy",
   "homepage": "https://github.com/wighawag/hardhat-deploy-ethers",
   "repository": "github:wighawag/hardhat-deploy-ethers",

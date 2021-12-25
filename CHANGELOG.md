@@ -1,5 +1,11 @@
 # hardhat-deploy-ethers
 
+## 0.3.0-beta.12
+
+### Patch Changes
+
+- support waffle build with missing linkReferences field
+
 ## 0.3.0-beta.10
 
 ### Patch Changes
