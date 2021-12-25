@@ -10,7 +10,7 @@ import { useEnvironment } from "./helpers";
 
 describe("hardhat-deploy plugin", function () {
   describe("hardhat config with external artifacts", function () {
-    useEnvironment("hardhat-project-with-hardhat-deploy", "hardhat");
+    useEnvironment("hardhat-project-with-hardhat-deploy", "localhost");
 
     describe("getContractAt", function () {
       describe("with the name and address", function () {
@@ -31,5 +31,25 @@ describe("hardhat-deploy plugin", function () {
         });
       });
     });
+
+    describe("getContractFactory", function () {
+      describe("with external contract builded by hardhat", async function () {
+        it("should return a contract factory", async function () {
+          const contractFactory = await this.env.ethers.getContractFactory("Greeter");
+          const contract = await contractFactory.deploy()
+          assert.isDefined(contract)
+          assert.isDefined(contract.greet)
+        })
+      })
+      describe("with external contract builded by waffle", async function () {
+        it("should return a contract factory", async function () {
+          const [signer] = await this.env.ethers.getSigners();
+          const contractFactory = await this.env.ethers.getContractFactory('UniswapV2Factory', signer);
+          const contract = await contractFactory.deploy(signer.address)
+          assert.isDefined(contract)
+          assert.isDefined(contract.createPair)
+        })
+      })
+    })
   });
 });

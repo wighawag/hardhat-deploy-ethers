@@ -264,13 +264,16 @@ async function collectLibrariesAndLink(
     sourceName: string;
     libName: string;
   }> = [];
-  for (const [sourceName, sourceLibraries] of Object.entries(
-    artifact.linkReferences
-  )) {
-    for (const libName of Object.keys(sourceLibraries)) {
-      neededLibraries.push({ sourceName, libName });
+  if (artifact.linkReferences) {
+    for (const [sourceName, sourceLibraries] of Object.entries(
+      artifact.linkReferences
+    )) {
+      for (const libName of Object.keys(sourceLibraries)) {
+        neededLibraries.push({ sourceName, libName });
+      }
     }
   }
+  
 
   const linksToApply: Map<string, Link> = new Map();
   for (const [linkedLibraryName, linkedLibraryAddress] of Object.entries(
