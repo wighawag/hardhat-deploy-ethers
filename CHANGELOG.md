@@ -1,5 +1,11 @@
 # hardhat-deploy-ethers
 
+## 0.3.0-beta.13
+
+### Patch Changes
+
+- follow hardhat-ethers compilation output setup
+
 ## 0.3.0-beta.12
 
 ### Patch Changes
