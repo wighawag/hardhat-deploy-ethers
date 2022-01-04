@@ -4,6 +4,13 @@
 # Compilation output
 /build-test/
 /dist
+/internal
+/types
+/*.js
+/*.js.map
+/*.d.ts
+/*.d.ts.map
+
 
 artifacts/
 !test/fixture-projects/hardhat-project-with-hardhat-deploy/external/artifacts/

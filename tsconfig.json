@@ -8,12 +8,8 @@
     "strict": true,
     "esModuleInterop": true,
     "noEmitOnError": true,
-    "outDir": "./dist",
-    "rootDirs": ["./src", "./test"]
+    "outDir": "./",
   },
-  "exclude": ["dist", "node_modules"],
-  "include": [
-    "./test",
-    "./src"    
-  ]
+  "exclude": ["node_modules"],
+  "include": [ "src/**/*" ],
 }

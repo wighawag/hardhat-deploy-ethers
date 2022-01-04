@@ -8,8 +8,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "main": "dist/src/internal/index.js",
-  "types": "dist/src/internal/index.d.ts",
+  "main": "internal/index.js",
+  "types": "internal/index.d.ts",
   "keywords": [
     "ethereum",
     "smart-contracts",
@@ -21,6 +21,12 @@
   "files": [
     "dist/src/",
     "src/",
+    "internal/",
+    "types/",
+    "*.d.ts",
+    "*.d.ts.map",
+    "*.js",
+    "*.js.map",
     "LICENSE",
     "README.md"
   ],
