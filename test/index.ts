@@ -68,7 +68,10 @@ describe("Ethers plugin", function () {
       });
 
       describe("signer", function () {
-        it("should sign a message", async function () {
+        // Unsopported personal_sign on ganache 
+        // Ref.: https://github.com/trufflesuite/ganache/issues/540
+        // Ref.: https://github.com/trufflesuite/ganache/issues/995
+        it.skip("should sign a message", async function () {
           const [sig] = await this.env.ethers.getSigners();
 
           const result = await sig.signMessage("hello");
@@ -740,9 +743,9 @@ describe("Ethers plugin", function () {
     it("should return the correct balance after a hardhat_reset", async function () {
       const [sig] = await this.env.ethers.getSigners();
 
-      let balance = await this.env.ethers.provider.getBalance(sig.address);
+      const preTransactionBalance = await this.env.ethers.provider.getBalance(sig.address);
 
-      assert.equal(balance.toString(), "10000000000000000000000");
+      assert.equal(preTransactionBalance.toString(), "10000000000000000000000");
 
       const response = await sig.sendTransaction({
         from: sig.address,
@@ -750,12 +753,12 @@ describe("Ethers plugin", function () {
       });
       await response.wait();
 
-      balance = await this.env.ethers.provider.getBalance(sig.address);
-      assert.equal(balance.toString(), "9999999832000000000000");
+      const postTransactionBalance = await this.env.ethers.provider.getBalance(sig.address);
+      assert.equal(postTransactionBalance.toString(), "9999999960625000000000");
 
       await this.env.ethers.provider.send("hardhat_reset", []);
-      balance = await this.env.ethers.provider.getBalance(sig.address);
-      assert.equal(balance.toString(), "10000000000000000000000");
+      const resettedBalance = await this.env.ethers.provider.getBalance(sig.address);
+      assert.equal(resettedBalance.toString(), "10000000000000000000000");
     });
 
     it("should return the correct code after a hardhat_reset", async function () {
