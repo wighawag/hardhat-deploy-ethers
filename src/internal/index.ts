@@ -1,7 +1,9 @@
 import type EthersT from "ethers";
-import { extendEnvironment } from "hardhat/config";
+import { extendArtifacts, extendEnvironment } from "hardhat/config";
 import { lazyObject } from "hardhat/plugins";
+import "hardhat-deploy";
 
+import { HardhatDeployArtifactsSource } from "./artifacts-source";
 import { getContractAt, getContractFactory, getSigners, getSigner, getContract, getContractOrNull, getNamedSigners, getNamedSigner, getSignerOrNull, getNamedSignerOrNull, getUnnamedSigners } from "./helpers";
 import type * as ProviderProxyT from "./provider-proxy";
 import "./type-extensions";
@@ -12,6 +14,10 @@ import {
 } from 'hardhat/builtin-tasks/task-names';
 import fs from 'fs';
 import path from 'path';
+
+extendArtifacts(
+  (config) => new HardhatDeployArtifactsSource(config.paths.deployments)
+);
 
 // necessary as newest version of typechain assume specific hardhat-ethers type which are not compatible with hardhat-deploy-ethers
 task(TASK_COMPILE, undefined).setAction(async (args, hre, runSuper) => {
