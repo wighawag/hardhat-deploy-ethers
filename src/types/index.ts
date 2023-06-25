@@ -1,49 +1,18 @@
-import type * as ethers from "ethers";
+import type * as ethers from 'ethers';
+import type {Libraries} from '@nomicfoundation/hardhat-ethers/types';
 
-import type { SignerWithAddress } from "../signers";
-
-export interface Libraries {
-  [libraryName: string]: string;
-}
-
-export interface FactoryOptions {
-  signer?: ethers.Signer;
+export declare interface FactoryOptionsWithSignerAddress {
+  signer: string;
   libraries?: Libraries;
 }
 
-export declare function getContractFactory<T extends ethers.ContractFactory>(
+export declare function getContractFactoryWithSignerAddress<ContractType extends ethers.BaseContract = ethers.BaseContract>(
   name: string,
-  signerOrOptions?: ethers.Signer | string | FactoryOptions
-): Promise<T>;
-export declare function getContractFactory<T extends ethers.ContractFactory>(
+  signerOrOptions: string | FactoryOptionsWithSignerAddress
+): Promise<ethers.ContractFactory<any[], ContractType>>;
+export declare function getContractFactoryWithSignerAddress<ContractType extends ethers.BaseContract = ethers.BaseContract>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   abi: any[],
-  bytecode: ethers.utils.BytesLike,
-  signer?: ethers.Signer | string
-): Promise<T>;
-
-export interface HardhatEthersHelpers {
-  provider: ethers.providers.JsonRpcProvider;
-
-  getContractFactory: typeof getContractFactory;
-  getContractAt: <T extends ethers.Contract>(
-    nameOrAbi: string | any[],
-    address: string,
-    signer?: ethers.Signer | string
-  ) => Promise<T>;
-  getSigners: () => Promise<SignerWithAddress[]>;
-  getSigner: (address: string) => Promise<SignerWithAddress>;
-  getSignerOrNull: (address: string) => Promise<SignerWithAddress | null>;
-  getNamedSigners: () => Promise<Record<string, SignerWithAddress>>;
-  getNamedSigner: (name: string) => Promise<SignerWithAddress>;
-  getNamedSignerOrNull: (name: string) => Promise<SignerWithAddress | null>;
-  getUnnamedSigners: () => Promise<SignerWithAddress[]>;
-
-  getContract: <T extends ethers.Contract>(
-    name: string,
-    signer?: ethers.Signer | string
-  ) => Promise<T>;
-  getContractOrNull: <T extends ethers.Contract>(
-    name: string,
-    signer?: ethers.Signer | string
-  ) => Promise<T | null>;
-}
+  bytecode: ethers.BytesLike,
+  signer: string
+): Promise<ethers.ContractFactory<any[], ContractType>>;
