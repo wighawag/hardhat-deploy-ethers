@@ -2,6 +2,9 @@
   "name": "hardhat-deploy-ethers",
   "version": "0.4.0",
   "description": "Hardhat TypeScript plugin boilerplate",
+  "publishConfig": {
+    "access": "public"
+  },
   "repository": "github:wighawag/hardhat-plugin-template",
   "author": "Ronan Sandford",
   "license": "MIT",
