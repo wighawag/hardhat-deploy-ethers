@@ -1,82 +1,100 @@
-[![hardhat](https://hardhat.org/hardhat-plugin-badge.svg?1)](https://hardhat.org)
-# wighawag-hardhat-plugin-template
+[![hardhat](https://hardhat.org/buidler-plugin-badge.svg?1)](https://hardhat.org)
 
-_A one line description of the plugin_
+# hardhat-deploy-ethers
 
-[Hardhat](http://hardhat.org) plugin example. 
+[Hardhat](https://hardhat.org) plugin extension for `@nomicfoundation/hardhat-ethers` and its integration with [ethers.js](https://github.com/ethers-io/ethers.js/).
+
+The extension add support for [hardhat-deploy](https://github.com/wighawag/hardhat-deploy).
 
 ## What
 
-<_A longer, one paragraph, description of the plugin_>
-
-This plugin is just an example
-
 ## Installation
 
-<_A step-by-step guide on how to install the plugin_>
+`hardhat-deploy-ethers` require the installation of `hardhat-deploy` and `@nomicfoundation/hardhat-ethers`
+
+Note that you cannot use `@nomicfoundation/hardhat-toolbox` for installing `@nomicfoundation/hardhat-ethers` as this interfere with the typing extensions provided by `hardhat-deploy-ethers`
 
 ```bash
-npm install wighawag-hardhat-plugin-template
+npm install --save-dev @nomicfoundation/hardhat-ethers ethers hardhat-deploy hardhat-deploy-ethers
 ```
 
-And add the following statement to your `hardhat.config.ts`:
+Which means you then add the following statement to your `hardhat.config.js`:
+
+```js
+require("@nomicfoundation/hardhat-ethers");
+require("hardhat-deploy");
+require("hardhat-deploy-ethers");
+``` 
+
+Or, if you are using TypeScript, add this to your `hardhat.config.ts`:
 
 ```ts
-import "wighawag-hardhat-plugin-template";
+import '@nomicfoundation/hardhat-ethers';
+import 'hardhat-deploy';
+import 'hardhat-deploy-ethers';
+
 ```
 
-## Required plugins
 
-<_The list of all the required Hardhat plugins if there are any_>
+Note that if you were using `@nomicfoundation/hardhat-toolbox` you can simply add the dependencies it added for you with
 
-Nothing required
+```bash
+npm install --save-dev @nomicfoundation/hardhat-chai-matchers @nomicfoundation/hardhat-ethers @typechain/hardhat hardhat-gas-reporter solidity-coverage
+```
+
+and add them to your hardhat.config.js
+
+```js
+require('@nomicfoundation/hardhat-chai-matchers');
+require('@nomicfoundation/hardhat-ethers');
+require('@typechain/hardhat');
+require('hardhat-gas-reporter');
+require('solidity-coverage');
+```
+
+or hardhat.config.ts (typescript)
+
+```ts
+import '@nomicfoundation/hardhat-chai-matchers';
+import '@nomicfoundation/hardhat-ethers';
+import '@typechain/hardhat';
+import 'hardhat-gas-reporter';
+import 'solidity-coverage';
+```
 
 ## Tasks
 
-<_A description of each task added by this plugin. If it just overrides internal 
-tasks, this may not be needed_>
-
 This plugin creates no additional tasks.
-<_or_>
-This plugin adds the _example_ task to Hardhat:
-```
-output of npx hardhat help example
-``` 
 
 ## Environment extensions
 
-<_A description of each extension to the Hardhat Runtime Environment_>
+This object has add some extra `hardhat-deploy` specific functionalities to the `hre.ethers` added already by `@nomicfoundation/hardhat-ethers`
 
-This plugin extends the Hardhat Runtime Environment by adding an `example` field
-whose type is `ExampleHardhatRuntimeEnvironmentField`.
+### Helpers
 
-## Configuration
+These helpers are added to the `ethers` object:
 
-<_A description of each extension to the HardhatConfig or to its fields_>
-
-This plugin extends the `HardhatConfig`'s `ProjectPaths` object with an optional 
-`newPath` field.
-
-This is an example of how to set it:
-
-```js
-module.exports = {
-  paths: {
-    newPath: "./new-path"
-  }
-};
+```ts
+interface HardhatEthersHelpers {
+  getContractAtWithSignerAddress: <ContractType extends ethers.BaseContract = ethers.BaseContract>(nameOrAbi: string | any[], address: string, signer: string) => Promise<ContractType>;
+  getSignerOrNull: (address: string) => Promise<SignerWithAddress | null>;
+  getNamedSigners: () => Promise<Record<string, SignerWithAddress>>;
+  getNamedSigner: (name: string) => Promise<SignerWithAddress>;
+  getNamedSignerOrNull: (name: string) => Promise<SignerWithAddress | null>;
+  getUnnamedSigners: () => Promise<SignerWithAddress[]>;
+  getContract: <ContractType extends ethers.BaseContract = ethers.BaseContract>(name: string, signer?: ethers.Signer | string) => Promise<ContractType>;
+  getContractOrNull: <ContractType extends ethers.BaseContract = ethers.BaseContract>(name: string, signer?: ethers.Signer | string) => Promise<ContractType | null>;
+}
 ```
+
 
 ## Usage
 
-<_A description of how to use this plugin. How to use the tasks if there are any, etc._>
-
 There are no additional steps you need to take for this plugin to work.
 
-Install it and access ethers through the Hardhat Runtime Environment anywhere 
-you need it (tasks, scripts, tests, etc).
 
-## TypeScript support
+It automatically integrate with the `hardhat-deploy` plugin if detected and let you do the following:
 
-<_ any specific infor for typescript support _>
-
+```js
+const contract = await hre.ethers.getContract('<deploymentName>');
+```
