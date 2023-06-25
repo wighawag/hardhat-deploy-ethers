@@ -1,5 +1,11 @@
 # hardhat-deploy-ethers
 
+## 0.4.1
+
+### Patch Changes
+
+- README update
+
 ## 0.4.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
   "name": "hardhat-deploy-ethers",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Hardhat TypeScript plugin boilerplate",
   "publishConfig": {
     "access": "public"
