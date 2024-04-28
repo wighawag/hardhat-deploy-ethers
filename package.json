@@ -1,6 +1,6 @@
 {
   "name": "hardhat-deploy-ethers",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Hardhat TypeScript plugin boilerplate",
   "publishConfig": {
     "access": "public"
@@ -38,7 +38,7 @@
     "eslint-plugin-prettier": "^4.2.1",
     "ethers": "^6.6.1",
     "hardhat": "^2.16.0",
-    "hardhat-deploy": "^0.11.34",
+    "hardhat-deploy": "^0.12.0",
     "mocha": "^10.2.0",
     "prettier": "^2.8.8",
     "source-map-support": "^0.5.21",
@@ -48,7 +48,7 @@
   "peerDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.2",
     "hardhat": "^2.16.0",
-    "hardhat-deploy": "^0.11.34"
+    "hardhat-deploy": "^0.12.0"
   },
   "scripts": {
     "prepare": "node ./.setup.js",
